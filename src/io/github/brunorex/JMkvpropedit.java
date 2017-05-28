@@ -25,38 +25,43 @@
 
 package io.github.brunorex;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOCase;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.ini4j.Ini;
+import org.ini4j.InvalidFileFormatException;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
-import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.filechooser.*;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.border.EmptyBorder;
-
-import org.apache.commons.io.*;
-import org.apache.commons.io.filefilter.*;
-import org.ini4j.*;
-
-public class JMkvpropedit {
+class JMkvpropedit {
 
     private static final String VERSION_NUMBER = "1.3.3.1";
     private static final int MAX_STREAMS = 30;
     private static String[] argsArray;
 
     private Process proc = null;
-    private ProcessBuilder pb = new ProcessBuilder();
+    private final ProcessBuilder pb = new ProcessBuilder();
     private SwingWorker<Void, Void> worker = null;
     private boolean exeFound = true;
 
-    private File iniFile = new File("JMkvpropedit.ini");
+    private final File iniFile = new File("JMkvpropedit.ini");
     private static final MkvStrings mkvStrings = new MkvStrings();
 
-    private JFileChooser chooser = new JFileChooser(System.getProperty("user.home")) {
+    private final JFileChooser chooser = new JFileChooser(System.getProperty("user.home")) {
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -78,27 +83,26 @@ public class JMkvpropedit {
         }
     };
 
-
-    private FileFilter EXE_EXT_FILTER =
+    private final FileFilter EXE_EXT_FILTER =
             new FileNameExtensionFilter("Excecutable files (*.exe)", "exe");
 
-    private FileFilter MATROSKA_EXT_FILTER =
+    private final FileFilter MATROSKA_EXT_FILTER =
             new FileNameExtensionFilter("Matroska files (*.mkv; *.mka; *.mk3d; *.webm; *.mks)",
                     "mkv", "mka", "mk3d", "webm", "mks");
 
-    private IOFileFilter MATROSKA_FILE_FILTER =
+    private final IOFileFilter MATROSKA_FILE_FILTER =
             new WildcardFileFilter(new String[]{"*.mkv", "*.mka", "*.mk3d", ".webm", ".mks"},
                     IOCase.INSENSITIVE);
 
-    private FileFilter TXT_EXT_FILTER =
+    private final FileFilter TXT_EXT_FILTER =
             new FileNameExtensionFilter("Plain text files (*.txt)", "txt");
 
-    private FileFilter XML_EXT_FILTER =
+    private final FileFilter XML_EXT_FILTER =
             new FileNameExtensionFilter("XML files (*.xml)", "xml");
 
-    private static final String[] COLUMNS_ATTACHMENTS_ADD = { "File", "Name", "Description", "MIME Type" };
-    private static final double[] COLUMN_SIZES_ATTACHMENTS_ADD = { 0.35, 0.20, 0.25, 0.20 };
-    private DefaultTableModel modelAttachmentsAdd = new DefaultTableModel(null, COLUMNS_ATTACHMENTS_ADD) {
+    private static final String[] COLUMNS_ATTACHMENTS_ADD = {"File", "Name", "Description", "MIME Type"};
+    private static final double[] COLUMN_SIZES_ATTACHMENTS_ADD = {0.35, 0.20, 0.25, 0.20};
+    private final DefaultTableModel modelAttachmentsAdd = new DefaultTableModel(null, COLUMNS_ATTACHMENTS_ADD) {
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -107,13 +111,12 @@ public class JMkvpropedit {
         }
 
     };
-
 
     private static final String[] COLUMNS_ATTACHMENTS_REPLACE = {
-        "Type", "Original Value", "Replacement",
-        "Name", "Description", "MIME Type" };
-    private static final double[] COLUMN_SIZES_ATTACHMENTS_REPLACE = { 0.15, 0.15, 0.20, 0.20, 0.15, 0.15 };
-    private DefaultTableModel modelAttachmentsReplace = new DefaultTableModel(null, COLUMNS_ATTACHMENTS_REPLACE) {
+            "Type", "Original Value", "Replacement",
+            "Name", "Description", "MIME Type"};
+    private static final double[] COLUMN_SIZES_ATTACHMENTS_REPLACE = {0.15, 0.15, 0.20, 0.20, 0.15, 0.15};
+    private final DefaultTableModel modelAttachmentsReplace = new DefaultTableModel(null, COLUMNS_ATTACHMENTS_REPLACE) {
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -123,9 +126,9 @@ public class JMkvpropedit {
 
     };
 
-    private static final String[] COLUMNS_ATTACHMENTS_DELETE = { "Type", "Value" };
-    private static final double[] COLUMN_SIZES_ATTACHMENTS_DELETE = { 0.40, 0.60 };
-    private DefaultTableModel modelAttachmentsDelete = new DefaultTableModel(null, COLUMNS_ATTACHMENTS_DELETE) {
+    private static final String[] COLUMNS_ATTACHMENTS_DELETE = {"Type", "Value"};
+    private static final double[] COLUMN_SIZES_ATTACHMENTS_DELETE = {0.40, 0.60};
+    private final DefaultTableModel modelAttachmentsDelete = new DefaultTableModel(null, COLUMNS_ATTACHMENTS_DELETE) {
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -162,7 +165,6 @@ public class JMkvpropedit {
     private List<String> cmdLineBatch = null;
     private List<String> cmdLineBatchOpt = null;
 
-
     // Window controls
     private Dimension frmJMkvpropeditDim = new Dimension(0, 0);
     private JFrame frmJMkvpropedit;
@@ -170,18 +172,9 @@ public class JMkvpropedit {
     private JButton btnProcessFiles;
     private JButton btnGenerateCmdLine;
 
-
     // Input tab controls
     private DefaultListModel<String> modelFiles;
     private JList<String> listFiles;
-    private JButton btnAddFiles;
-    private JButton btnRemoveFiles;
-    private JButton btnTopFiles;
-    private JButton btnUpFiles;
-    private JButton btnDownFiles;
-    private JButton btnBottomFiles;
-    private JButton btnClearFiles;
-
 
     // General tab controls
     private JCheckBox chbTitleGeneral;
@@ -207,7 +200,6 @@ public class JMkvpropedit {
     private JTextField txtMkvPropExe;
     private JCheckBox chbMkvPropExeDef;
 
-
     // Video tab controls
     private JComboBox<String> cbVideo;
     private JButton btnAddVideo;
@@ -215,30 +207,28 @@ public class JMkvpropedit {
     private CardLayout lytLyrdPnlVideo;
     private JPanel lyrdPnlVideo;
 
-    private JPanel[] subPnlVideo = new JPanel[MAX_STREAMS];
-    private JCheckBox[] chbEditVideo = new JCheckBox[MAX_STREAMS];
-    private JCheckBox[] chbDefaultVideo = new JCheckBox[MAX_STREAMS];
-    private JRadioButton[] rbYesDefVideo = new JRadioButton[MAX_STREAMS];
-    private JRadioButton[] rbNoDefVideo = new JRadioButton[MAX_STREAMS];
-    private ButtonGroup[] bgRbDefVideo = new ButtonGroup[MAX_STREAMS];
-    private JCheckBox[] chbForcedVideo = new JCheckBox[MAX_STREAMS];
-    private JRadioButton[] rbYesForcedVideo = new JRadioButton[MAX_STREAMS];
-    private JRadioButton[] rbNoForcedVideo = new JRadioButton[MAX_STREAMS];
-    private ButtonGroup[] bgRbForcedVideo = new ButtonGroup[MAX_STREAMS];
-    private JCheckBox[] chbNameVideo = new JCheckBox[MAX_STREAMS];
-    private JTextField[] txtNameVideo = new JTextField[MAX_STREAMS];
-    private JCheckBox[] chbNumbVideo = new JCheckBox[MAX_STREAMS];
-    private JLabel[] lblNumbStartVideo = new JLabel[MAX_STREAMS];
-    private JTextField[] txtNumbStartVideo = new JTextField[MAX_STREAMS];
-    private JLabel[] lblNumbPadVideo = new JLabel[MAX_STREAMS];
-    private JTextField[] txtNumbPadVideo = new JTextField[MAX_STREAMS];
-    private JLabel[] lblNumbExplainVideo = new JLabel[MAX_STREAMS];
-    private JCheckBox[] chbLangVideo = new JCheckBox[MAX_STREAMS];
-    private JCheckBox[] chbExtraCmdVideo = new JCheckBox[MAX_STREAMS];
-    private JTextField[] txtExtraCmdVideo = new JTextField[MAX_STREAMS];
-    @SuppressWarnings("unchecked")
-    private JComboBox<String>[] cbLangVideo = new JComboBox[MAX_STREAMS];
-
+    private final JPanel[] subPnlVideo = new JPanel[MAX_STREAMS];
+    private final JCheckBox[] chbEditVideo = new JCheckBox[MAX_STREAMS];
+    private final JCheckBox[] chbDefaultVideo = new JCheckBox[MAX_STREAMS];
+    private final JRadioButton[] rbYesDefVideo = new JRadioButton[MAX_STREAMS];
+    private final JRadioButton[] rbNoDefVideo = new JRadioButton[MAX_STREAMS];
+    private final ButtonGroup[] bgRbDefVideo = new ButtonGroup[MAX_STREAMS];
+    private final JCheckBox[] chbForcedVideo = new JCheckBox[MAX_STREAMS];
+    private final JRadioButton[] rbYesForcedVideo = new JRadioButton[MAX_STREAMS];
+    private final JRadioButton[] rbNoForcedVideo = new JRadioButton[MAX_STREAMS];
+    private final ButtonGroup[] bgRbForcedVideo = new ButtonGroup[MAX_STREAMS];
+    private final JCheckBox[] chbNameVideo = new JCheckBox[MAX_STREAMS];
+    private final JTextField[] txtNameVideo = new JTextField[MAX_STREAMS];
+    private final JCheckBox[] chbNumbVideo = new JCheckBox[MAX_STREAMS];
+    private final JLabel[] lblNumbStartVideo = new JLabel[MAX_STREAMS];
+    private final JTextField[] txtNumbStartVideo = new JTextField[MAX_STREAMS];
+    private final JLabel[] lblNumbPadVideo = new JLabel[MAX_STREAMS];
+    private final JTextField[] txtNumbPadVideo = new JTextField[MAX_STREAMS];
+    private final JLabel[] lblNumbExplainVideo = new JLabel[MAX_STREAMS];
+    private final JCheckBox[] chbLangVideo = new JCheckBox[MAX_STREAMS];
+    private final JCheckBox[] chbExtraCmdVideo = new JCheckBox[MAX_STREAMS];
+    private final JTextField[] txtExtraCmdVideo = new JTextField[MAX_STREAMS];
+    private final JComboBox[] cbLangVideo = new JComboBox[MAX_STREAMS];
 
     // Audio tab controls
     private JComboBox<String> cbAudio;
@@ -247,30 +237,28 @@ public class JMkvpropedit {
     private CardLayout lytLyrdPnlAudio;
     private JPanel lyrdPnlAudio;
 
-    private JPanel[] subPnlAudio = new JPanel[MAX_STREAMS];
-    private JCheckBox[] chbEditAudio = new JCheckBox[MAX_STREAMS];
-    private JCheckBox[] chbDefaultAudio = new JCheckBox[MAX_STREAMS];
-    private JRadioButton[] rbYesDefAudio = new JRadioButton[MAX_STREAMS];
-    private JRadioButton[] rbNoDefAudio = new JRadioButton[MAX_STREAMS];
-    private ButtonGroup[] bgRbDefAudio = new ButtonGroup[MAX_STREAMS];
-    private JCheckBox[] chbForcedAudio = new JCheckBox[MAX_STREAMS];
-    private JRadioButton[] rbYesForcedAudio = new JRadioButton[MAX_STREAMS];
-    private JRadioButton[] rbNoForcedAudio = new JRadioButton[MAX_STREAMS];
-    private ButtonGroup[] bgRbForcedAudio = new ButtonGroup[MAX_STREAMS];
-    private JCheckBox[] chbNameAudio = new JCheckBox[MAX_STREAMS];
-    private JTextField[] txtNameAudio = new JTextField[MAX_STREAMS];
-    private JCheckBox[] chbNumbAudio = new JCheckBox[MAX_STREAMS];
-    private JLabel[] lblNumbStartAudio = new JLabel[MAX_STREAMS];
-    private JTextField[] txtNumbStartAudio = new JTextField[MAX_STREAMS];
-    private JLabel[] lblNumbPadAudio = new JLabel[MAX_STREAMS];
-    private JTextField[] txtNumbPadAudio = new JTextField[MAX_STREAMS];
-    private JLabel[] lblNumbExplainAudio = new JLabel[MAX_STREAMS];
-    private JCheckBox[] chbLangAudio = new JCheckBox[MAX_STREAMS];
-    private JCheckBox[] chbExtraCmdAudio = new JCheckBox[MAX_STREAMS];
-    private JTextField[] txtExtraCmdAudio = new JTextField[MAX_STREAMS];
-    @SuppressWarnings("unchecked")
-    private JComboBox<String>[] cbLangAudio = new JComboBox[MAX_STREAMS];
-
+    private final JPanel[] subPnlAudio = new JPanel[MAX_STREAMS];
+    private final JCheckBox[] chbEditAudio = new JCheckBox[MAX_STREAMS];
+    private final JCheckBox[] chbDefaultAudio = new JCheckBox[MAX_STREAMS];
+    private final JRadioButton[] rbYesDefAudio = new JRadioButton[MAX_STREAMS];
+    private final JRadioButton[] rbNoDefAudio = new JRadioButton[MAX_STREAMS];
+    private final ButtonGroup[] bgRbDefAudio = new ButtonGroup[MAX_STREAMS];
+    private final JCheckBox[] chbForcedAudio = new JCheckBox[MAX_STREAMS];
+    private final JRadioButton[] rbYesForcedAudio = new JRadioButton[MAX_STREAMS];
+    private final JRadioButton[] rbNoForcedAudio = new JRadioButton[MAX_STREAMS];
+    private final ButtonGroup[] bgRbForcedAudio = new ButtonGroup[MAX_STREAMS];
+    private final JCheckBox[] chbNameAudio = new JCheckBox[MAX_STREAMS];
+    private final JTextField[] txtNameAudio = new JTextField[MAX_STREAMS];
+    private final JCheckBox[] chbNumbAudio = new JCheckBox[MAX_STREAMS];
+    private final JLabel[] lblNumbStartAudio = new JLabel[MAX_STREAMS];
+    private final JTextField[] txtNumbStartAudio = new JTextField[MAX_STREAMS];
+    private final JLabel[] lblNumbPadAudio = new JLabel[MAX_STREAMS];
+    private final JTextField[] txtNumbPadAudio = new JTextField[MAX_STREAMS];
+    private final JLabel[] lblNumbExplainAudio = new JLabel[MAX_STREAMS];
+    private final JCheckBox[] chbLangAudio = new JCheckBox[MAX_STREAMS];
+    private final JCheckBox[] chbExtraCmdAudio = new JCheckBox[MAX_STREAMS];
+    private final JTextField[] txtExtraCmdAudio = new JTextField[MAX_STREAMS];
+    private final JComboBox[] cbLangAudio = new JComboBox[MAX_STREAMS];
 
     // Subtitle tab controls
     private JComboBox<String> cbSubtitle;
@@ -279,120 +267,82 @@ public class JMkvpropedit {
     private CardLayout lytLyrdPnlSubtitle;
     private JPanel lyrdPnlSubtitle;
 
-    private JPanel[] subPnlSubtitle = new JPanel[MAX_STREAMS];
-    private JCheckBox[] chbEditSubtitle = new JCheckBox[MAX_STREAMS];
-    private JCheckBox[] chbDefaultSubtitle = new JCheckBox[MAX_STREAMS];
-    private JRadioButton[] rbYesDefSubtitle = new JRadioButton[MAX_STREAMS];
-    private JRadioButton[] rbNoDefSubtitle = new JRadioButton[MAX_STREAMS];
-    private ButtonGroup[] bgRbDefSubtitle = new ButtonGroup[MAX_STREAMS];
-    private JCheckBox[] chbForcedSubtitle = new JCheckBox[MAX_STREAMS];
-    private JRadioButton[] rbYesForcedSubtitle = new JRadioButton[MAX_STREAMS];
-    private JRadioButton[] rbNoForcedSubtitle = new JRadioButton[MAX_STREAMS];
-    private ButtonGroup[] bgRbForcedSubtitle = new ButtonGroup[MAX_STREAMS];
-    private JCheckBox[] chbNameSubtitle = new JCheckBox[MAX_STREAMS];
-    private JTextField[] txtNameSubtitle = new JTextField[MAX_STREAMS];
-    private JCheckBox[] chbNumbSubtitle = new JCheckBox[MAX_STREAMS];
-    private JLabel[] lblNumbStartSubtitle = new JLabel[MAX_STREAMS];
-    private JTextField[] txtNumbStartSubtitle = new JTextField[MAX_STREAMS];
-    private JLabel[] lblNumbPadSubtitle = new JLabel[MAX_STREAMS];
-    private JTextField[] txtNumbPadSubtitle = new JTextField[MAX_STREAMS];
-    private JLabel[] lblNumbExplainSubtitle = new JLabel[MAX_STREAMS];
-    private JCheckBox[] chbLangSubtitle = new JCheckBox[MAX_STREAMS];
-    private JCheckBox[] chbExtraCmdSubtitle = new JCheckBox[MAX_STREAMS];
-    private JTextField[] txtExtraCmdSubtitle = new JTextField[MAX_STREAMS];
-    @SuppressWarnings("unchecked")
-    private JComboBox<String>[] cbLangSubtitle = new JComboBox[MAX_STREAMS];
+    private final JPanel[] subPnlSubtitle = new JPanel[MAX_STREAMS];
+    private final JCheckBox[] chbEditSubtitle = new JCheckBox[MAX_STREAMS];
+    private final JCheckBox[] chbDefaultSubtitle = new JCheckBox[MAX_STREAMS];
+    private final JRadioButton[] rbYesDefSubtitle = new JRadioButton[MAX_STREAMS];
+    private final JRadioButton[] rbNoDefSubtitle = new JRadioButton[MAX_STREAMS];
+    private final ButtonGroup[] bgRbDefSubtitle = new ButtonGroup[MAX_STREAMS];
+    private final JCheckBox[] chbForcedSubtitle = new JCheckBox[MAX_STREAMS];
+    private final JRadioButton[] rbYesForcedSubtitle = new JRadioButton[MAX_STREAMS];
+    private final JRadioButton[] rbNoForcedSubtitle = new JRadioButton[MAX_STREAMS];
+    private final ButtonGroup[] bgRbForcedSubtitle = new ButtonGroup[MAX_STREAMS];
+    private final JCheckBox[] chbNameSubtitle = new JCheckBox[MAX_STREAMS];
+    private final JTextField[] txtNameSubtitle = new JTextField[MAX_STREAMS];
+    private final JCheckBox[] chbNumbSubtitle = new JCheckBox[MAX_STREAMS];
+    private final JLabel[] lblNumbStartSubtitle = new JLabel[MAX_STREAMS];
+    private final JTextField[] txtNumbStartSubtitle = new JTextField[MAX_STREAMS];
+    private final JLabel[] lblNumbPadSubtitle = new JLabel[MAX_STREAMS];
+    private final JTextField[] txtNumbPadSubtitle = new JTextField[MAX_STREAMS];
+    private final JLabel[] lblNumbExplainSubtitle = new JLabel[MAX_STREAMS];
+    private final JCheckBox[] chbLangSubtitle = new JCheckBox[MAX_STREAMS];
+    private final JCheckBox[] chbExtraCmdSubtitle = new JCheckBox[MAX_STREAMS];
+    private final JTextField[] txtExtraCmdSubtitle = new JTextField[MAX_STREAMS];
+    private final JComboBox[] cbLangSubtitle = new JComboBox[MAX_STREAMS];
 
-
-    //Attachments tab controls
-    private JTabbedPane pnlAttachments;
-    private JPanel pnlAttachAdd;
-    private JScrollPane spAttachAdd;
     private JTable tblAttachAdd;
-    private JPanel pnlAttachAddControls;
-    private JLabel lblAttachAddFile;
     private JTextField txtAttachAddFile;
-    private JButton btnBrowseAttachAddFile;
-    private JLabel lblAttachAddName;
     private JTextField txtAttachAddName;
-    private JLabel lblAttachAddDesc;
     private JTextField txtAttachAddDesc;
-    private JLabel lblAttachAddMime;
     private JComboBox<String> cbAttachAddMime;
-    private JPanel pnlAttachAddControlsBottom;
     private JButton btnAttachAddAdd;
     private JButton btnAttachAddRemove;
     private JButton btnAttachAddEdit;
     private JButton btnAttachAddCancel;
 
-    private JPanel pnlAttachReplace;
-    private JScrollPane spAttachReplace;
     private JTable tblAttachReplace;
-    private JPanel pnlAttachReplaceControls;
-    private JLabel lblAttachReplaceType;
-    private JPanel pnlAttachReplaceType;
-    private ButtonGroup bgAttachReplaceType = new ButtonGroup();
+    private final ButtonGroup bgAttachReplaceType = new ButtonGroup();
     private JRadioButton rbAttachReplaceID;
     private JRadioButton rbAttachReplaceName;
     private JRadioButton rbAttachReplaceMime;
-    private JPanel pnlAttachReplaceOrig;
-    private JLabel lblAttachReplaceOrig;
     private JTextField txtAttachReplaceOrig;
     private JComboBox<String> cbAttachReplaceOrig;
-    private JLabel lblAttachReplaceNew;
     private JTextField txtAttachReplaceNew;
-    private JButton btnAttachReplaceNewBrowse;
-    private JLabel lblAttachReplaceName;
     private JTextField txtAttachReplaceName;
-    private JLabel lblAttachReplaceDesc;
     private JTextField txtAttachReplaceDesc;
-    private JLabel lblAttachReplaceMime;
     private JComboBox<String> cbAttachReplaceMime;
-    private JPanel pnlAttachReplaceControlsBottom;
     private JButton btnAttachReplaceAdd;
     private JButton btnAttachReplaceEdit;
     private JButton btnAttachReplaceRemove;
     private JButton btnAttachReplaceCancel;
 
-    private JPanel pnlAttachDelete;
-    private JScrollPane spAttachDelete;
     private JTable tblAttachDelete;
-    private JPanel pnlAttachDeleteControls;
-    private ButtonGroup bgAttachDeleteType = new ButtonGroup();
-    private JLabel lblAttachDeleteType;
-    private JPanel pnlAttachDeleteType;
+    private final ButtonGroup bgAttachDeleteType = new ButtonGroup();
     private JRadioButton rbAttachDeleteName;
     private JRadioButton rbAttachDeleteID;
     private JRadioButton rbAttachDeleteMime;
-    private JLabel lblAttachDeleteValue;
-    private JPanel pnlAttachDeleteValue;
     private JTextField txtAttachDeleteValue;
     private JComboBox<String> cbAttachDeleteValue;
-    private JPanel pnlAttachDeleteControlsBottom;
     private JButton btnAttachDeleteAdd;
     private JButton btnAttachDeleteEdit;
     private JButton btnAttachDeleteRemove;
     private JButton btnAttachDeleteCancel;
 
-
     // Output tab controls
     private JTextArea txtOutput;
-
 
     /**
      * Launch the application.
      */
     public static void main(final String[] args) {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    argsArray = args;
-                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                    JMkvpropedit window = new JMkvpropedit();
-                    window.frmJMkvpropedit.setVisible(true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+        EventQueue.invokeLater(() -> {
+            try {
+                argsArray = args;
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                JMkvpropedit window = new JMkvpropedit();
+                window.frmJMkvpropedit.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
     }
@@ -400,7 +350,7 @@ public class JMkvpropedit {
     /**
      * Create the application.
      */
-    public JMkvpropedit() {
+    private JMkvpropedit() {
         initialize();
         parseFiles(argsArray);
     }
@@ -430,8 +380,8 @@ public class JMkvpropedit {
         spFiles.setViewportBorder(null);
         pnlInput.add(spFiles);
 
-        modelFiles = new DefaultListModel<String>();
-        listFiles = new JList<String>(modelFiles);
+        modelFiles = new DefaultListModel<>();
+        listFiles = new JList<>(modelFiles);
         spFiles.setViewportView(listFiles);
 
         JPanel pnlListToolbar = new JPanel();
@@ -439,7 +389,7 @@ public class JMkvpropedit {
         pnlInput.add(pnlListToolbar, BorderLayout.EAST);
         pnlListToolbar.setLayout(new BoxLayout(pnlListToolbar, BoxLayout.Y_AXIS));
 
-        btnAddFiles = new JButton("");
+        JButton btnAddFiles = new JButton("");
         btnAddFiles.setIcon(new ImageIcon(JMkvpropedit.class.getResource("/res/list-add.png")));
         btnAddFiles.setMargin(new Insets(0, 0, 0, 0));
         btnAddFiles.setBorderPainted(false);
@@ -451,7 +401,7 @@ public class JMkvpropedit {
         Component verticalStrut1 = Box.createVerticalStrut(10);
         pnlListToolbar.add(verticalStrut1);
 
-        btnRemoveFiles = new JButton("");
+        JButton btnRemoveFiles = new JButton("");
         btnRemoveFiles.setIcon(new ImageIcon(JMkvpropedit.class.getResource("/res/list-remove.png")));
         btnRemoveFiles.setMargin(new Insets(0, 0, 0, 0));
         btnRemoveFiles.setBorderPainted(false);
@@ -463,7 +413,7 @@ public class JMkvpropedit {
         Component verticalStrut2 = Box.createVerticalStrut(10);
         pnlListToolbar.add(verticalStrut2);
 
-        btnTopFiles = new JButton("");
+        JButton btnTopFiles = new JButton("");
         btnTopFiles.setIcon(new ImageIcon(JMkvpropedit.class.getResource("/res/go-top.png")));
         btnTopFiles.setMargin(new Insets(0, 0, 0, 0));
         btnTopFiles.setBorderPainted(false);
@@ -475,7 +425,7 @@ public class JMkvpropedit {
         Component verticalStrut3 = Box.createVerticalStrut(10);
         pnlListToolbar.add(verticalStrut3);
 
-        btnUpFiles = new JButton("");
+        JButton btnUpFiles = new JButton("");
         btnUpFiles.setIcon(new ImageIcon(JMkvpropedit.class.getResource("/res/go-up.png")));
         btnUpFiles.setMargin(new Insets(0, 0, 0, 0));
         btnUpFiles.setBorderPainted(false);
@@ -487,7 +437,7 @@ public class JMkvpropedit {
         Component verticalStrut4 = Box.createVerticalStrut(10);
         pnlListToolbar.add(verticalStrut4);
 
-        btnDownFiles = new JButton("");
+        JButton btnDownFiles = new JButton("");
         btnDownFiles.setIcon(new ImageIcon(JMkvpropedit.class.getResource("/res/go-down.png")));
         btnDownFiles.setMargin(new Insets(0, 0, 0, 0));
         btnDownFiles.setBorderPainted(false);
@@ -499,7 +449,7 @@ public class JMkvpropedit {
         Component verticalStrut5 = Box.createVerticalStrut(10);
         pnlListToolbar.add(verticalStrut5);
 
-        btnBottomFiles = new JButton("");
+        JButton btnBottomFiles = new JButton("");
         btnBottomFiles.setIcon(new ImageIcon(JMkvpropedit.class.getResource("/res/go-bottom.png")));
         btnBottomFiles.setMargin(new Insets(0, 0, 0, 0));
         btnBottomFiles.setBorderPainted(false);
@@ -511,7 +461,7 @@ public class JMkvpropedit {
         Component verticalStrut6 = Box.createVerticalStrut(10);
         pnlListToolbar.add(verticalStrut6);
 
-        btnClearFiles = new JButton("");
+        JButton btnClearFiles = new JButton("");
         btnClearFiles.setIcon(new ImageIcon(JMkvpropedit.class.getResource("/res/edit-clear.png")));
         btnClearFiles.setMargin(new Insets(0, 0, 0, 0));
         btnClearFiles.setBorderPainted(false);
@@ -606,10 +556,10 @@ public class JMkvpropedit {
         gbc_chbChapters.gridy = 3;
         pnlGeneral.add(chbChapters, gbc_chbChapters);
 
-        cbChapters = new JComboBox<String>();
+        cbChapters = new JComboBox<>();
         cbChapters.setEnabled(false);
-        cbChapters.setModel(new DefaultComboBoxModel<String>(
-                new String[] {"Remove", "From file:", "Match file name with suffix:"}));
+        cbChapters.setModel(new DefaultComboBoxModel<>(
+                new String[]{"Remove", "From file:", "Match file name with suffix:"}));
         cbChapters.setPrototypeDisplayValue("Match file name with suffix:  ");
         GridBagConstraints gbc_cbChapters = new GridBagConstraints();
         gbc_cbChapters.insets = new Insets(0, 0, 5, 0);
@@ -658,10 +608,10 @@ public class JMkvpropedit {
         gbc_btnBrowseChapters.gridy = 0;
         pnlChapControlsGeneral.add(btnBrowseChapters, gbc_btnBrowseChapters);
 
-        cbExtChapters = new JComboBox<String>();
+        cbExtChapters = new JComboBox<>();
         cbExtChapters.setVisible(false);
-        cbExtChapters.setModel(new DefaultComboBoxModel<String>(
-                new String[] {".xml", ".txt"}));
+        cbExtChapters.setModel(new DefaultComboBoxModel<>(
+                new String[]{".xml", ".txt"}));
         GridBagConstraints gbc_cbExtChapters = new GridBagConstraints();
         gbc_cbExtChapters.insets = new Insets(0, 0, 8, 0);
         gbc_cbExtChapters.gridx = 2;
@@ -676,10 +626,10 @@ public class JMkvpropedit {
         gbc_chbTags.gridy = 5;
         pnlGeneral.add(chbTags, gbc_chbTags);
 
-        cbTags = new JComboBox<String>();
+        cbTags = new JComboBox<>();
         cbTags.setEnabled(false);
-        cbTags.setModel(new DefaultComboBoxModel<String>(
-                new String[] {"Remove", "From file:", "Match file name with suffix:"}));
+        cbTags.setModel(new DefaultComboBoxModel<>(
+                new String[]{"Remove", "From file:", "Match file name with suffix:"}));
         cbTags.setPrototypeDisplayValue("Match file name with suffix:  ");
         GridBagConstraints gbc_cbTags = new GridBagConstraints();
         gbc_cbTags.insets = new Insets(0, 0, 5, 0);
@@ -728,10 +678,10 @@ public class JMkvpropedit {
         gbc_btnBrowseTags.gridy = 0;
         pnlTagControlsGeneral.add(btnBrowseTags, gbc_btnBrowseTags);
 
-        cbExtTags = new JComboBox<String>();
+        cbExtTags = new JComboBox<>();
         cbExtTags.setVisible(false);
-        cbExtTags.setModel(new DefaultComboBoxModel<String>(
-                new String[] {".xml", ".txt"}));
+        cbExtTags.setModel(new DefaultComboBoxModel<>(
+                new String[]{".xml", ".txt"}));
         GridBagConstraints gbc_cbExtTags = new GridBagConstraints();
         gbc_cbExtTags.insets = new Insets(0, 0, 8, 0);
         gbc_cbExtTags.gridx = 2;
@@ -829,7 +779,7 @@ public class JMkvpropedit {
         pnlVideo.add(pnlControlsVideo, gbc_pnlControlsVideo);
         pnlControlsVideo.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
-        cbVideo = new JComboBox<String>();
+        cbVideo = new JComboBox<>();
         pnlControlsVideo.add(cbVideo);
 
         btnAddVideo = new JButton("");
@@ -879,7 +829,7 @@ public class JMkvpropedit {
         pnlAudio.add(pnlControlsAudio, gbc_pnlControlsAudio);
         pnlControlsAudio.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
-        cbAudio = new JComboBox<String>();
+        cbAudio = new JComboBox<>();
         pnlControlsAudio.add(cbAudio);
 
         btnAddAudio = new JButton("");
@@ -929,7 +879,7 @@ public class JMkvpropedit {
         pnlSubtitle.add(pnlControlsSubtitle, gbc_pnlControlsSubtitle);
         pnlControlsSubtitle.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
-        cbSubtitle = new JComboBox<String>();
+        cbSubtitle = new JComboBox<>();
         pnlControlsSubtitle.add(cbSubtitle);
 
         btnAddSubtitle = new JButton("");
@@ -960,14 +910,14 @@ public class JMkvpropedit {
         lytLyrdPnlSubtitle = new CardLayout(0, 0);
         lyrdPnlSubtitle.setLayout(lytLyrdPnlSubtitle);
 
-        pnlAttachments = new JTabbedPane(JTabbedPane.TOP);
+        JTabbedPane pnlAttachments = new JTabbedPane(JTabbedPane.TOP);
         pnlTabs.addTab("Attachments", null, pnlAttachments, null);
 
-        pnlAttachAdd = new JPanel();
+        JPanel pnlAttachAdd = new JPanel();
         pnlAttachments.addTab("Add Attachments", null, pnlAttachAdd, null);
         pnlAttachAdd.setLayout(new BorderLayout(0, 0));
 
-        spAttachAdd = new JScrollPane();
+        JScrollPane spAttachAdd = new JScrollPane();
         pnlAttachAdd.add(spAttachAdd, BorderLayout.CENTER);
 
         tblAttachAdd = new JTable();
@@ -980,7 +930,7 @@ public class JMkvpropedit {
 
         spAttachAdd.setViewportView(tblAttachAdd);
 
-        pnlAttachAddControls = new JPanel();
+        JPanel pnlAttachAddControls = new JPanel();
         pnlAttachAddControls.setBorder(new EmptyBorder(5, 5, 5, 5));
         pnlAttachAdd.add(pnlAttachAddControls, BorderLayout.SOUTH);
         GridBagLayout gbl_pnlAttachAddControls = new GridBagLayout();
@@ -990,7 +940,7 @@ public class JMkvpropedit {
         gbl_pnlAttachAddControls.rowWeights = new double[]{0.0, 0.0, 0.0, 1.0, 1.0, Double.MIN_VALUE};
         pnlAttachAddControls.setLayout(gbl_pnlAttachAddControls);
 
-        lblAttachAddFile = new JLabel("File:");
+        JLabel lblAttachAddFile = new JLabel("File:");
         GridBagConstraints gbc_lblAttachAddFile = new GridBagConstraints();
         gbc_lblAttachAddFile.anchor = GridBagConstraints.WEST;
         gbc_lblAttachAddFile.insets = new Insets(0, 0, 5, 5);
@@ -1008,14 +958,14 @@ public class JMkvpropedit {
         pnlAttachAddControls.add(txtAttachAddFile, gbc_txtAttachAddFile);
         txtAttachAddFile.setColumns(10);
 
-        btnBrowseAttachAddFile = new JButton("Browse...");
+        JButton btnBrowseAttachAddFile = new JButton("Browse...");
         GridBagConstraints gbc_btnBrowseAttachAddFile = new GridBagConstraints();
         gbc_btnBrowseAttachAddFile.insets = new Insets(0, 0, 5, 0);
         gbc_btnBrowseAttachAddFile.gridx = 2;
         gbc_btnBrowseAttachAddFile.gridy = 0;
         pnlAttachAddControls.add(btnBrowseAttachAddFile, gbc_btnBrowseAttachAddFile);
 
-        lblAttachAddName = new JLabel("Name:");
+        JLabel lblAttachAddName = new JLabel("Name:");
         GridBagConstraints gbc_lblAttachAddName = new GridBagConstraints();
         gbc_lblAttachAddName.anchor = GridBagConstraints.WEST;
         gbc_lblAttachAddName.insets = new Insets(0, 0, 5, 5);
@@ -1032,7 +982,7 @@ public class JMkvpropedit {
         pnlAttachAddControls.add(txtAttachAddName, gbc_txtAttachAddName);
         txtAttachAddName.setColumns(10);
 
-        lblAttachAddDesc = new JLabel("Description:");
+        JLabel lblAttachAddDesc = new JLabel("Description:");
         GridBagConstraints gbc_lblAttachAddDesc = new GridBagConstraints();
         gbc_lblAttachAddDesc.anchor = GridBagConstraints.EAST;
         gbc_lblAttachAddDesc.insets = new Insets(0, 0, 5, 5);
@@ -1049,7 +999,7 @@ public class JMkvpropedit {
         pnlAttachAddControls.add(txtAttachAddDesc, gbc_txtAttachAddDesc);
         txtAttachAddDesc.setColumns(10);
 
-        lblAttachAddMime = new JLabel("MIME Type:");
+        JLabel lblAttachAddMime = new JLabel("MIME Type:");
         GridBagConstraints gbc_lblAttachAddMime = new GridBagConstraints();
         gbc_lblAttachAddMime.anchor = GridBagConstraints.EAST;
         gbc_lblAttachAddMime.insets = new Insets(0, 0, 5, 5);
@@ -1057,8 +1007,8 @@ public class JMkvpropedit {
         gbc_lblAttachAddMime.gridy = 3;
         pnlAttachAddControls.add(lblAttachAddMime, gbc_lblAttachAddMime);
 
-        cbAttachAddMime = new JComboBox<String>();
-        cbAttachAddMime.setModel(new DefaultComboBoxModel<String>(mkvStrings.getMimeTypes()));
+        cbAttachAddMime = new JComboBox<>();
+        cbAttachAddMime.setModel(new DefaultComboBoxModel<>(mkvStrings.getMimeTypes()));
         GridBagConstraints gbc_cbAttachAddMime = new GridBagConstraints();
         gbc_cbAttachAddMime.insets = new Insets(0, 0, 5, 5);
         gbc_cbAttachAddMime.fill = GridBagConstraints.HORIZONTAL;
@@ -1066,7 +1016,7 @@ public class JMkvpropedit {
         gbc_cbAttachAddMime.gridy = 3;
         pnlAttachAddControls.add(cbAttachAddMime, gbc_cbAttachAddMime);
 
-        pnlAttachAddControlsBottom = new JPanel();
+        JPanel pnlAttachAddControlsBottom = new JPanel();
         GridBagConstraints gbc_pnlAttachAddControlsBottom = new GridBagConstraints();
         gbc_pnlAttachAddControlsBottom.insets = new Insets(0, 0, 0, 5);
         gbc_pnlAttachAddControlsBottom.fill = GridBagConstraints.BOTH;
@@ -1111,11 +1061,11 @@ public class JMkvpropedit {
         gbc_btnAttachAddCancel.gridy = 0;
         pnlAttachAddControlsBottom.add(btnAttachAddCancel, gbc_btnAttachAddCancel);
 
-        pnlAttachReplace = new JPanel();
+        JPanel pnlAttachReplace = new JPanel();
         pnlAttachments.addTab("Replace Attachments", null, pnlAttachReplace, null);
         pnlAttachReplace.setLayout(new BorderLayout(0, 0));
 
-        spAttachReplace = new JScrollPane();
+        JScrollPane spAttachReplace = new JScrollPane();
         pnlAttachReplace.add(spAttachReplace, BorderLayout.CENTER);
 
         tblAttachReplace = new JTable();
@@ -1127,7 +1077,7 @@ public class JMkvpropedit {
         tblAttachReplace.setFillsViewportHeight(true);
         spAttachReplace.setViewportView(tblAttachReplace);
 
-        pnlAttachReplaceControls = new JPanel();
+        JPanel pnlAttachReplaceControls = new JPanel();
         pnlAttachReplaceControls.setBorder(new EmptyBorder(5, 5, 5, 5));
         pnlAttachReplace.add(pnlAttachReplaceControls, BorderLayout.SOUTH);
         GridBagLayout gbl_pnlAttachReplaceControls = new GridBagLayout();
@@ -1137,7 +1087,7 @@ public class JMkvpropedit {
         gbl_pnlAttachReplaceControls.rowWeights = new double[]{1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, Double.MIN_VALUE};
         pnlAttachReplaceControls.setLayout(gbl_pnlAttachReplaceControls);
 
-        lblAttachReplaceType = new JLabel("Type:");
+        JLabel lblAttachReplaceType = new JLabel("Type:");
         GridBagConstraints gbc_lblAttachReplaceType = new GridBagConstraints();
         gbc_lblAttachReplaceType.anchor = GridBagConstraints.WEST;
         gbc_lblAttachReplaceType.insets = new Insets(0, 0, 5, 5);
@@ -1145,7 +1095,7 @@ public class JMkvpropedit {
         gbc_lblAttachReplaceType.gridy = 0;
         pnlAttachReplaceControls.add(lblAttachReplaceType, gbc_lblAttachReplaceType);
 
-        pnlAttachReplaceType = new JPanel();
+        JPanel pnlAttachReplaceType = new JPanel();
         GridBagConstraints gbc_pnlAttachReplaceType = new GridBagConstraints();
         gbc_pnlAttachReplaceType.insets = new Insets(0, 0, 5, 5);
         gbc_pnlAttachReplaceType.fill = GridBagConstraints.BOTH;
@@ -1183,7 +1133,7 @@ public class JMkvpropedit {
         pnlAttachReplaceType.add(rbAttachReplaceMime, gbc_rbAttachReplaceMime);
         bgAttachReplaceType.add(rbAttachReplaceMime);
 
-        lblAttachReplaceOrig = new JLabel("Original value:");
+        JLabel lblAttachReplaceOrig = new JLabel("Original value:");
         GridBagConstraints gbc_lblAttachReplaceOrig = new GridBagConstraints();
         gbc_lblAttachReplaceOrig.insets = new Insets(0, 0, 5, 5);
         gbc_lblAttachReplaceOrig.anchor = GridBagConstraints.WEST;
@@ -1191,7 +1141,7 @@ public class JMkvpropedit {
         gbc_lblAttachReplaceOrig.gridy = 1;
         pnlAttachReplaceControls.add(lblAttachReplaceOrig, gbc_lblAttachReplaceOrig);
 
-        pnlAttachReplaceOrig = new JPanel();
+        JPanel pnlAttachReplaceOrig = new JPanel();
         GridBagConstraints gbc_pnlAttachReplaceOrig = new GridBagConstraints();
         gbc_pnlAttachReplaceOrig.insets = new Insets(0, 0, 5, 5);
         gbc_pnlAttachReplaceOrig.fill = GridBagConstraints.BOTH;
@@ -1204,15 +1154,15 @@ public class JMkvpropedit {
         pnlAttachReplaceOrig.add(txtAttachReplaceOrig, "txtAttachReplaceOrig");
         txtAttachReplaceOrig.setColumns(10);
 
-        cbAttachReplaceOrig = new JComboBox<String>();
+        cbAttachReplaceOrig = new JComboBox<>();
         List<String> mimeList = mkvStrings.getMimeTypeList();
         mimeList.remove(0);
-        cbAttachReplaceOrig.setModel(new DefaultComboBoxModel<String>(
+        cbAttachReplaceOrig.setModel(new DefaultComboBoxModel<>(
                 mimeList.toArray(new String[mimeList.size()])));
         cbAttachReplaceOrig.setVisible(false);
         pnlAttachReplaceOrig.add(cbAttachReplaceOrig, "cbAttachReplaceOrig");
 
-        lblAttachReplaceNew = new JLabel("Replacement:");
+        JLabel lblAttachReplaceNew = new JLabel("Replacement:");
         GridBagConstraints gbc_lblAttachReplaceNew = new GridBagConstraints();
         gbc_lblAttachReplaceNew.anchor = GridBagConstraints.WEST;
         gbc_lblAttachReplaceNew.insets = new Insets(0, 0, 5, 5);
@@ -1230,14 +1180,14 @@ public class JMkvpropedit {
         pnlAttachReplaceControls.add(txtAttachReplaceNew, gbc_txtAttachReplaceNew);
         txtAttachReplaceNew.setColumns(10);
 
-        btnAttachReplaceNewBrowse = new JButton("Browse....");
+        JButton btnAttachReplaceNewBrowse = new JButton("Browse....");
         GridBagConstraints gbc_btnAttachReplaceNewBrowse = new GridBagConstraints();
         gbc_btnAttachReplaceNewBrowse.insets = new Insets(0, 0, 5, 0);
         gbc_btnAttachReplaceNewBrowse.gridx = 2;
         gbc_btnAttachReplaceNewBrowse.gridy = 2;
         pnlAttachReplaceControls.add(btnAttachReplaceNewBrowse, gbc_btnAttachReplaceNewBrowse);
 
-        lblAttachReplaceName = new JLabel("Name:");
+        JLabel lblAttachReplaceName = new JLabel("Name:");
         GridBagConstraints gbc_lblAttachReplaceName = new GridBagConstraints();
         gbc_lblAttachReplaceName.anchor = GridBagConstraints.WEST;
         gbc_lblAttachReplaceName.insets = new Insets(0, 0, 5, 5);
@@ -1254,7 +1204,7 @@ public class JMkvpropedit {
         gbc_txtAttachReplaceName.gridy = 3;
         pnlAttachReplaceControls.add(txtAttachReplaceName, gbc_txtAttachReplaceName);
 
-        lblAttachReplaceDesc = new JLabel("Description:");
+        JLabel lblAttachReplaceDesc = new JLabel("Description:");
         GridBagConstraints gbc_lblAttachReplaceDesc = new GridBagConstraints();
         gbc_lblAttachReplaceDesc.anchor = GridBagConstraints.WEST;
         gbc_lblAttachReplaceDesc.insets = new Insets(0, 0, 5, 5);
@@ -1271,7 +1221,7 @@ public class JMkvpropedit {
         gbc_txtAttachReplaceDesc.gridy = 4;
         pnlAttachReplaceControls.add(txtAttachReplaceDesc, gbc_txtAttachReplaceDesc);
 
-        lblAttachReplaceMime = new JLabel("MIME Type:");
+        JLabel lblAttachReplaceMime = new JLabel("MIME Type:");
         GridBagConstraints gbc_lblAttachReplaceMime = new GridBagConstraints();
         gbc_lblAttachReplaceMime.anchor = GridBagConstraints.WEST;
         gbc_lblAttachReplaceMime.insets = new Insets(0, 0, 5, 5);
@@ -1279,8 +1229,8 @@ public class JMkvpropedit {
         gbc_lblAttachReplaceMime.gridy = 5;
         pnlAttachReplaceControls.add(lblAttachReplaceMime, gbc_lblAttachReplaceMime);
 
-        cbAttachReplaceMime = new JComboBox<String>();
-        cbAttachReplaceMime.setModel(new DefaultComboBoxModel<String>(mkvStrings.getMimeTypes()));
+        cbAttachReplaceMime = new JComboBox<>();
+        cbAttachReplaceMime.setModel(new DefaultComboBoxModel<>(mkvStrings.getMimeTypes()));
         GridBagConstraints gbc_cbAttachReplaceMime = new GridBagConstraints();
         gbc_cbAttachReplaceMime.insets = new Insets(0, 0, 5, 5);
         gbc_cbAttachReplaceMime.fill = GridBagConstraints.HORIZONTAL;
@@ -1288,7 +1238,7 @@ public class JMkvpropedit {
         gbc_cbAttachReplaceMime.gridy = 5;
         pnlAttachReplaceControls.add(cbAttachReplaceMime, gbc_cbAttachReplaceMime);
 
-        pnlAttachReplaceControlsBottom = new JPanel();
+        JPanel pnlAttachReplaceControlsBottom = new JPanel();
         GridBagConstraints gbc_pnlAttachReplaceControlsBottom = new GridBagConstraints();
         gbc_pnlAttachReplaceControlsBottom.anchor = GridBagConstraints.WEST;
         gbc_pnlAttachReplaceControlsBottom.insets = new Insets(0, 0, 0, 5);
@@ -1297,8 +1247,8 @@ public class JMkvpropedit {
         gbc_pnlAttachReplaceControlsBottom.gridy = 6;
         pnlAttachReplaceControls.add(pnlAttachReplaceControlsBottom, gbc_pnlAttachReplaceControlsBottom);
         GridBagLayout gbl_pnlAttachReplaceControlsBottom = new GridBagLayout();
-        gbl_pnlAttachReplaceControlsBottom.columnWidths = new int[] {0, 0, 0, 0};
-        gbl_pnlAttachReplaceControlsBottom.rowHeights = new int[] {0, 0};
+        gbl_pnlAttachReplaceControlsBottom.columnWidths = new int[]{0, 0, 0, 0};
+        gbl_pnlAttachReplaceControlsBottom.rowHeights = new int[]{0, 0};
         gbl_pnlAttachReplaceControlsBottom.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0};
         gbl_pnlAttachReplaceControlsBottom.rowWeights = new double[]{0.0, Double.MIN_VALUE};
         pnlAttachReplaceControlsBottom.setLayout(gbl_pnlAttachReplaceControlsBottom);
@@ -1334,11 +1284,11 @@ public class JMkvpropedit {
         gbc_btnAttachReplaceCancel.gridy = 0;
         pnlAttachReplaceControlsBottom.add(btnAttachReplaceCancel, gbc_btnAttachReplaceCancel);
 
-        pnlAttachDelete = new JPanel();
+        JPanel pnlAttachDelete = new JPanel();
         pnlAttachments.addTab("Delete Attachments", null, pnlAttachDelete, null);
         pnlAttachDelete.setLayout(new BorderLayout(0, 0));
 
-        spAttachDelete = new JScrollPane();
+        JScrollPane spAttachDelete = new JScrollPane();
         pnlAttachDelete.add(spAttachDelete, BorderLayout.CENTER);
 
         tblAttachDelete = new JTable();
@@ -1350,7 +1300,7 @@ public class JMkvpropedit {
         tblAttachDelete.setFillsViewportHeight(true);
         spAttachDelete.setViewportView(tblAttachDelete);
 
-        pnlAttachDeleteControls = new JPanel();
+        JPanel pnlAttachDeleteControls = new JPanel();
         pnlAttachDeleteControls.setBorder(new EmptyBorder(5, 5, 5, 5));
         pnlAttachDelete.add(pnlAttachDeleteControls, BorderLayout.SOUTH);
         GridBagLayout gbl_pnlAttachDeleteControls = new GridBagLayout();
@@ -1360,14 +1310,14 @@ public class JMkvpropedit {
         gbl_pnlAttachDeleteControls.rowWeights = new double[]{1.0, 1.0, 1.0, Double.MIN_VALUE};
         pnlAttachDeleteControls.setLayout(gbl_pnlAttachDeleteControls);
 
-        lblAttachDeleteType = new JLabel("Type:");
+        JLabel lblAttachDeleteType = new JLabel("Type:");
         GridBagConstraints gbc_lblAttachDeleteType = new GridBagConstraints();
         gbc_lblAttachDeleteType.insets = new Insets(0, 0, 5, 5);
         gbc_lblAttachDeleteType.gridx = 0;
         gbc_lblAttachDeleteType.gridy = 0;
         pnlAttachDeleteControls.add(lblAttachDeleteType, gbc_lblAttachDeleteType);
 
-        pnlAttachDeleteType = new JPanel();
+        JPanel pnlAttachDeleteType = new JPanel();
         GridBagConstraints gbc_pnlAttachDeleteType = new GridBagConstraints();
         gbc_pnlAttachDeleteType.anchor = GridBagConstraints.WEST;
         gbc_pnlAttachDeleteType.insets = new Insets(0, 0, 5, 0);
@@ -1376,8 +1326,8 @@ public class JMkvpropedit {
         gbc_pnlAttachDeleteType.gridy = 0;
         pnlAttachDeleteControls.add(pnlAttachDeleteType, gbc_pnlAttachDeleteType);
         GridBagLayout gbl_pnlAttachDeleteType = new GridBagLayout();
-        gbl_pnlAttachDeleteType.columnWidths = new int[] {0, 0, 0};
-        gbl_pnlAttachDeleteType.rowHeights = new int[] {0, 0};
+        gbl_pnlAttachDeleteType.columnWidths = new int[]{0, 0, 0};
+        gbl_pnlAttachDeleteType.rowHeights = new int[]{0, 0};
         gbl_pnlAttachDeleteType.columnWeights = new double[]{0.0, 0.0, 0.0};
         gbl_pnlAttachDeleteType.rowWeights = new double[]{0.0, Double.MIN_VALUE};
         pnlAttachDeleteType.setLayout(gbl_pnlAttachDeleteType);
@@ -1406,7 +1356,7 @@ public class JMkvpropedit {
         pnlAttachDeleteType.add(rbAttachDeleteMime, gbc_rbAttachDeleteMime);
         bgAttachDeleteType.add(rbAttachDeleteMime);
 
-        lblAttachDeleteValue = new JLabel("Value:");
+        JLabel lblAttachDeleteValue = new JLabel("Value:");
         GridBagConstraints gbc_lblAttachDeleteValue = new GridBagConstraints();
         gbc_lblAttachDeleteValue.anchor = GridBagConstraints.EAST;
         gbc_lblAttachDeleteValue.insets = new Insets(0, 0, 5, 5);
@@ -1414,7 +1364,7 @@ public class JMkvpropedit {
         gbc_lblAttachDeleteValue.gridy = 1;
         pnlAttachDeleteControls.add(lblAttachDeleteValue, gbc_lblAttachDeleteValue);
 
-        pnlAttachDeleteValue = new JPanel();
+        JPanel pnlAttachDeleteValue = new JPanel();
         GridBagConstraints gbc_pnlAttachDeleteValue = new GridBagConstraints();
         gbc_pnlAttachDeleteValue.insets = new Insets(0, 0, 5, 0);
         gbc_pnlAttachDeleteValue.fill = GridBagConstraints.BOTH;
@@ -1427,21 +1377,21 @@ public class JMkvpropedit {
         pnlAttachDeleteValue.add(txtAttachDeleteValue, "txtAttachDeleteValue");
         txtAttachDeleteValue.setColumns(10);
 
-        cbAttachDeleteValue = new JComboBox<String>();
+        cbAttachDeleteValue = new JComboBox<>();
         cbAttachDeleteValue.setVisible(false);
-        cbAttachDeleteValue.setModel(new DefaultComboBoxModel<String>(
+        cbAttachDeleteValue.setModel(new DefaultComboBoxModel<>(
                 mimeList.toArray(new String[mimeList.size()])));
         pnlAttachDeleteValue.add(cbAttachDeleteValue, "cbAttachDeleteValue");
 
-        pnlAttachDeleteControlsBottom = new JPanel();
+        JPanel pnlAttachDeleteControlsBottom = new JPanel();
         GridBagConstraints gbc_pnlAttachDeleteControlsBottom = new GridBagConstraints();
         gbc_pnlAttachDeleteControlsBottom.fill = GridBagConstraints.BOTH;
         gbc_pnlAttachDeleteControlsBottom.gridx = 1;
         gbc_pnlAttachDeleteControlsBottom.gridy = 2;
         pnlAttachDeleteControls.add(pnlAttachDeleteControlsBottom, gbc_pnlAttachDeleteControlsBottom);
         GridBagLayout gbl_pnlAttachDeleteControlsBottom = new GridBagLayout();
-        gbl_pnlAttachDeleteControlsBottom.columnWidths = new int[] {0, 0, 0, 0, 0, 0, 0, 0};
-        gbl_pnlAttachDeleteControlsBottom.rowHeights = new int[] {0, 0};
+        gbl_pnlAttachDeleteControlsBottom.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_pnlAttachDeleteControlsBottom.rowHeights = new int[]{0, 0};
         gbl_pnlAttachDeleteControlsBottom.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
         gbl_pnlAttachDeleteControlsBottom.rowWeights = new double[]{0.0, Double.MIN_VALUE};
         pnlAttachDeleteControlsBottom.setLayout(gbl_pnlAttachDeleteControlsBottom);
@@ -1522,7 +1472,6 @@ public class JMkvpropedit {
 
         /* End of mouse events for right-click menu */
 
-
         frmJMkvpropedit.addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent e) {
@@ -1582,170 +1531,155 @@ public class JMkvpropedit {
             }
         });
 
+        new FileDrop(listFiles, files -> {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    addMkvFilesFromFolder(file);
+                } else {
+                    addFile(file, true);
+                }
+            }
+        });
 
-        new FileDrop(listFiles, new FileDrop.Listener() {
-            public void filesDropped(File[] files) {
-                for (int i = 0; i < files.length; i++) {
-                    if (files[i].isDirectory()) {
-                        addMkvFilesFromFolder(files[i]);
+        btnAddFiles.addActionListener((ActionEvent e) -> {
+            File[] files = null;
+
+            chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+            chooser.setDialogTitle("Select Matroska file(s) to edit");
+            chooser.setMultiSelectionEnabled(true);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.resetChoosableFileFilters();
+            chooser.setFileFilter(MATROSKA_EXT_FILTER);
+
+            int open = chooser.showOpenDialog(frmJMkvpropedit);
+
+            if (open == JFileChooser.APPROVE_OPTION) {
+                files = chooser.getSelectedFiles();
+                for (File file : files) {
+                    if (!file.exists())
+                        continue;
+
+                    if (file.isDirectory()) {
+                        addMkvFilesFromFolder(file);
                     } else {
-                        addFile(files[i], true);
-                    }
-                }
-            }
-        });
-
-        btnAddFiles.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                File[] files = null;
-
-                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                chooser.setDialogTitle("Select Matroska file(s) to edit");
-                chooser.setMultiSelectionEnabled(true);
-                chooser.setAcceptAllFileFilterUsed(false);
-                chooser.resetChoosableFileFilters();
-                chooser.setFileFilter(MATROSKA_EXT_FILTER);
-
-                int open = chooser.showOpenDialog(frmJMkvpropedit);
-
-                if (open == JFileChooser.APPROVE_OPTION) {
-                    files = chooser.getSelectedFiles();
-                    for (int i = 0; i < files.length; i++) {
-                            try {
-                                if (!modelFiles.contains(files[i].getCanonicalPath()) && files[i].exists()) {
-                                    modelFiles.add(modelFiles.getSize(), files[i].getCanonicalPath());
-                                }
-                            } catch (IOException e1) {
+                        try {
+                            if (!modelFiles.contains(file.getCanonicalPath()) && file.exists()) {
+                                modelFiles.add(modelFiles.getSize(), file.getCanonicalPath());
                             }
-                    }
-                }
-
-            }
-        });
-
-        btnRemoveFiles.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (modelFiles.getSize() > 0) {
-                    while (listFiles.getSelectedIndex() != -1) {
-                        int[] idx = listFiles.getSelectedIndices();
-                        modelFiles.remove(idx[0]);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                        }
                     }
                 }
             }
+
         });
 
-        btnClearFiles.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                modelFiles.removeAllElements();
-            }
-        });
-
-        btnTopFiles.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                int[] idx = listFiles.getSelectedIndices();
-
-                for (int i = 0; i < idx.length; i++) {
-                    int pos = idx[i];
-
-                    if (pos > 0) {
-                        String temp = (String)modelFiles.remove(pos);
-                        modelFiles.add(i, temp);
-                        listFiles.ensureIndexIsVisible(0);
-                        idx[i] = i;
-                    }
-                }
-
-                listFiles.setSelectedIndices(idx);
-            }
-        });
-
-        btnUpFiles.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                int[] idx = listFiles.getSelectedIndices();
-
-                for (int i = 0; i < idx.length; i++) {
-                    int pos = idx[i];
-
-                    if (pos > 0 && listFiles.getMinSelectionIndex() != 0) {
-                        String temp = (String)modelFiles.remove(pos);
-                        modelFiles.add(pos-1, temp);
-                        listFiles.ensureIndexIsVisible(pos-1);
-                        idx[i]--;
-                    }
-                }
-
-                listFiles.setSelectedIndices(idx);
-            }
-        });
-
-        btnDownFiles.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                int[] idx = listFiles.getSelectedIndices();
-
-                for (int i = idx.length-1; i > -1; i--) {
-                    int pos = idx[i];
-
-                    if (pos < modelFiles.getSize()-1 && listFiles.getMaxSelectionIndex() != modelFiles.getSize()-1) {
-                        String temp = (String)modelFiles.remove(pos);
-                        modelFiles.add(pos+1, temp);
-                        listFiles.ensureIndexIsVisible(pos+1);
-                        idx[i]++;
-                    }
-                }
-
-                listFiles.setSelectedIndices(idx);
-            }
-        });
-
-        btnBottomFiles.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                int[] idx = listFiles.getSelectedIndices();
-                int j = 0;
-
-                for (int i = idx.length-1; i > -1; i--) {
-                    int pos = idx[i];
-
-                    if (pos < modelFiles.getSize()) {
-                        String temp = (String)modelFiles.remove(pos);
-                        modelFiles.add(modelFiles.getSize()-j, temp);
-                        j++;
-                        listFiles.ensureIndexIsVisible(modelFiles.getSize()-1);
-                        idx[i] = modelFiles.getSize()-j;
-                    }
-                }
-
-                listFiles.setSelectedIndices(idx);
-            }
-        });
-
-        chbTitleGeneral.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                boolean state = txtTitleGeneral.isEnabled();
-
-                if (txtTitleGeneral.isEnabled() || chbTitleGeneral.isSelected()) {
-                    txtTitleGeneral.setEnabled(!state);
-                    chbNumbGeneral.setEnabled(!state);
-
-                    if (chbNumbGeneral.isSelected()) {
-                        lblNumbStartGeneral.setEnabled(!state);
-                        txtNumbStartGeneral.setEnabled(!state);
-                        lblNumbPadGeneral.setEnabled(!state);
-                        txtNumbPadGeneral.setEnabled(!state);
-                        lblNumbExplainGeneral.setEnabled(!state);
-                    }
+        btnRemoveFiles.addActionListener(e -> {
+            if (modelFiles.getSize() > 0) {
+                while (listFiles.getSelectedIndex() != -1) {
+                    int[] idx = listFiles.getSelectedIndices();
+                    modelFiles.remove(idx[0]);
                 }
             }
         });
 
-        chbNumbGeneral.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                boolean state = txtNumbStartGeneral.isEnabled();
-                lblNumbStartGeneral.setEnabled(!state);
-                txtNumbStartGeneral.setEnabled(!state);
-                lblNumbPadGeneral.setEnabled(!state);
-                txtNumbPadGeneral.setEnabled(!state);
-                lblNumbExplainGeneral.setEnabled(!state);
+        btnClearFiles.addActionListener(e -> modelFiles.removeAllElements());
+
+        btnTopFiles.addActionListener(e -> {
+            int[] idx = listFiles.getSelectedIndices();
+
+            for (int i = 0; i < idx.length; i++) {
+                int pos = idx[i];
+
+                if (pos > 0) {
+                    String temp = modelFiles.remove(pos);
+                    modelFiles.add(i, temp);
+                    listFiles.ensureIndexIsVisible(0);
+                    idx[i] = i;
+                }
             }
+
+            listFiles.setSelectedIndices(idx);
+        });
+
+        btnUpFiles.addActionListener(e -> {
+            int[] idx = listFiles.getSelectedIndices();
+
+            for (int i = 0; i < idx.length; i++) {
+                int pos = idx[i];
+
+                if (pos > 0 && listFiles.getMinSelectionIndex() != 0) {
+                    String temp = modelFiles.remove(pos);
+                    modelFiles.add(pos - 1, temp);
+                    listFiles.ensureIndexIsVisible(pos - 1);
+                    idx[i]--;
+                }
+            }
+
+            listFiles.setSelectedIndices(idx);
+        });
+
+        btnDownFiles.addActionListener(e -> {
+            int[] idx = listFiles.getSelectedIndices();
+
+            for (int i = idx.length - 1; i > -1; i--) {
+                int pos = idx[i];
+
+                if (pos < modelFiles.getSize() - 1 && listFiles.getMaxSelectionIndex() != modelFiles.getSize() - 1) {
+                    String temp = modelFiles.remove(pos);
+                    modelFiles.add(pos + 1, temp);
+                    listFiles.ensureIndexIsVisible(pos + 1);
+                    idx[i]++;
+                }
+            }
+
+            listFiles.setSelectedIndices(idx);
+        });
+
+        btnBottomFiles.addActionListener(e -> {
+            int[] idx = listFiles.getSelectedIndices();
+            int j = 0;
+
+            for (int i = idx.length - 1; i > -1; i--) {
+                int pos = idx[i];
+
+                if (pos < modelFiles.getSize()) {
+                    String temp = modelFiles.remove(pos);
+                    modelFiles.add(modelFiles.getSize() - j, temp);
+                    j++;
+                    listFiles.ensureIndexIsVisible(modelFiles.getSize() - 1);
+                    idx[i] = modelFiles.getSize() - j;
+                }
+            }
+
+            listFiles.setSelectedIndices(idx);
+        });
+
+        chbTitleGeneral.addActionListener(e -> {
+            boolean state = txtTitleGeneral.isEnabled();
+
+            if (txtTitleGeneral.isEnabled() || chbTitleGeneral.isSelected()) {
+                txtTitleGeneral.setEnabled(!state);
+                chbNumbGeneral.setEnabled(!state);
+
+                if (chbNumbGeneral.isSelected()) {
+                    lblNumbStartGeneral.setEnabled(!state);
+                    txtNumbStartGeneral.setEnabled(!state);
+                    lblNumbPadGeneral.setEnabled(!state);
+                    txtNumbPadGeneral.setEnabled(!state);
+                    lblNumbExplainGeneral.setEnabled(!state);
+                }
+            }
+        });
+
+        chbNumbGeneral.addActionListener(e -> {
+            boolean state = txtNumbStartGeneral.isEnabled();
+            lblNumbStartGeneral.setEnabled(!state);
+            txtNumbStartGeneral.setEnabled(!state);
+            lblNumbPadGeneral.setEnabled(!state);
+            txtNumbPadGeneral.setEnabled(!state);
+            lblNumbExplainGeneral.setEnabled(!state);
         });
 
         txtNumbStartGeneral.addFocusListener(new FocusAdapter() {
@@ -1774,351 +1708,296 @@ public class JMkvpropedit {
             }
         });
 
-        chbChapters.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                boolean state = cbChapters.isEnabled();
-                cbChapters.setEnabled(!state);
+        chbChapters.addActionListener(e -> {
+            boolean state = cbChapters.isEnabled();
+            cbChapters.setEnabled(!state);
 
-                if (cbChapters.getSelectedIndex() == 1) {
-                    txtChapters.setEditable(false);
-                    txtChapters.setVisible(true);
-                    txtChapters.setEnabled(!state);
-                    btnBrowseChapters.setVisible(true);
-                    btnBrowseChapters.setEnabled(!state);
-                    cbExtChapters.setVisible(false);
-                } else if (cbChapters.getSelectedIndex() == 2) {
-                    txtChapters.setEditable(true);
-                    txtChapters.setVisible(true);
-                    txtChapters.setEnabled(!state);
-                    btnBrowseChapters.setVisible(false);
-                    btnBrowseChapters.setEnabled(!state);
-                    cbExtChapters.setVisible(true);
-                    cbExtChapters.setEnabled(!state);
-                } else if (!chbChapters.isSelected()) {
-                    txtChapters.setVisible(false);
-                    btnBrowseChapters.setVisible(false);
-                    cbExtChapters.setVisible(false);
+            if (cbChapters.getSelectedIndex() == 1) {
+                txtChapters.setEditable(false);
+                txtChapters.setVisible(true);
+                txtChapters.setEnabled(!state);
+                btnBrowseChapters.setVisible(true);
+                btnBrowseChapters.setEnabled(!state);
+                cbExtChapters.setVisible(false);
+            } else if (cbChapters.getSelectedIndex() == 2) {
+                txtChapters.setEditable(true);
+                txtChapters.setVisible(true);
+                txtChapters.setEnabled(!state);
+                btnBrowseChapters.setVisible(false);
+                btnBrowseChapters.setEnabled(!state);
+                cbExtChapters.setVisible(true);
+                cbExtChapters.setEnabled(!state);
+            } else if (!chbChapters.isSelected()) {
+                txtChapters.setVisible(false);
+                btnBrowseChapters.setVisible(false);
+                cbExtChapters.setVisible(false);
+            }
+        });
+
+        cbChapters.addActionListener(e -> {
+            if (cbChapters.getSelectedIndex() == 0) {
+                txtChapters.setVisible(false);
+                btnBrowseChapters.setVisible(false);
+                cbExtChapters.setVisible(false);
+            } else if (cbChapters.getSelectedIndex() == 1) {
+                txtChapters.setText("");
+                txtChapters.setEditable(false);
+                txtChapters.setVisible(true);
+                btnBrowseChapters.setVisible(true);
+                cbExtChapters.setVisible(false);
+            } else {
+                txtChapters.setText("-chapters");
+                txtChapters.setEditable(true);
+                txtChapters.setVisible(true);
+                btnBrowseChapters.setVisible(false);
+                cbExtChapters.setVisible(true);
+            }
+        });
+
+        btnBrowseChapters.addActionListener(e -> {
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            chooser.setDialogTitle("Select chapters file");
+            chooser.setMultiSelectionEnabled(false);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.resetChoosableFileFilters();
+            chooser.setFileFilter(TXT_EXT_FILTER);
+            chooser.setFileFilter(XML_EXT_FILTER);
+
+            int open = chooser.showOpenDialog(frmJMkvpropedit);
+
+            if (open == JFileChooser.APPROVE_OPTION) {
+                if (chooser.getSelectedFile().exists()) {
+                    txtChapters.setText(chooser.getSelectedFile().toString());
                 }
             }
         });
 
-        cbChapters.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (cbChapters.getSelectedIndex() == 0) {
-                    txtChapters.setVisible(false);
-                    btnBrowseChapters.setVisible(false);
-                    cbExtChapters.setVisible(false);
-                } else if (cbChapters.getSelectedIndex() == 1) {
-                    txtChapters.setText("");
-                    txtChapters.setEditable(false);
-                    txtChapters.setVisible(true);
-                    btnBrowseChapters.setVisible(true);
-                    cbExtChapters.setVisible(false);
-                } else {
-                    txtChapters.setText("-chapters");
-                    txtChapters.setEditable(true);
-                    txtChapters.setVisible(true);
-                    btnBrowseChapters.setVisible(false);
-                    cbExtChapters.setVisible(true);
+        chbTags.addActionListener(e -> {
+            boolean state = cbTags.isEnabled();
+            cbTags.setEnabled(!state);
+
+            if (cbTags.getSelectedIndex() == 1) {
+                txtTags.setEditable(false);
+                txtTags.setVisible(true);
+                txtTags.setEnabled(!state);
+                btnBrowseTags.setVisible(true);
+                btnBrowseTags.setEnabled(!state);
+                cbExtTags.setVisible(false);
+            } else if (cbTags.getSelectedIndex() == 2) {
+                txtTags.setEditable(true);
+                txtTags.setVisible(true);
+                txtTags.setEnabled(!state);
+                btnBrowseTags.setVisible(false);
+                btnBrowseTags.setEnabled(!state);
+                cbExtTags.setVisible(true);
+                cbExtTags.setEnabled(!state);
+            } else if (!chbTags.isSelected()) {
+                txtTags.setVisible(false);
+                btnBrowseTags.setVisible(false);
+                cbExtTags.setVisible(false);
+            }
+        });
+
+        cbTags.addActionListener(e -> {
+            if (cbTags.getSelectedIndex() == 0) {
+                txtTags.setVisible(false);
+                btnBrowseTags.setVisible(false);
+                cbExtTags.setVisible(false);
+            } else if (cbTags.getSelectedIndex() == 1) {
+                txtTags.setText("");
+                txtTags.setEditable(false);
+                txtTags.setVisible(true);
+                btnBrowseTags.setVisible(true);
+                cbExtTags.setVisible(false);
+            } else {
+                txtTags.setText("-tags");
+                txtTags.setEditable(true);
+                txtTags.setVisible(true);
+                btnBrowseTags.setVisible(false);
+                cbExtTags.setVisible(true);
+            }
+        });
+
+        btnBrowseTags.addActionListener(e -> {
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            chooser.setDialogTitle("Select tags file");
+            chooser.setMultiSelectionEnabled(false);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.resetChoosableFileFilters();
+            chooser.setFileFilter(TXT_EXT_FILTER);
+            chooser.setFileFilter(XML_EXT_FILTER);
+
+            int open = chooser.showOpenDialog(frmJMkvpropedit);
+
+            if (open == JFileChooser.APPROVE_OPTION) {
+                if (chooser.getSelectedFile().exists()) {
+                    txtTags.setText(chooser.getSelectedFile().toString());
                 }
             }
         });
 
-        btnBrowseChapters.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                chooser.setDialogTitle("Select chapters file");
-                chooser.setMultiSelectionEnabled(false);
-                chooser.setAcceptAllFileFilterUsed(false);
-                chooser.resetChoosableFileFilters();
-                chooser.setFileFilter(TXT_EXT_FILTER);
-                chooser.setFileFilter(XML_EXT_FILTER);
+        chbExtraCmdGeneral.addActionListener(e -> {
+            boolean state = txtExtraCmdGeneral.isEnabled();
+            txtExtraCmdGeneral.setEnabled(!state);
+        });
 
-                int open = chooser.showOpenDialog(frmJMkvpropedit);
+        chbMkvPropExeDef.addActionListener(e -> {
+            txtMkvPropExe.setText("mkvpropedit");
+            chbMkvPropExeDef.setEnabled(false);
+            defaultIniFile();
+        });
 
-                if (open == JFileChooser.APPROVE_OPTION) {
-                    if (chooser.getSelectedFile().exists()) {
-                        txtChapters.setText(chooser.getSelectedFile().toString());
-                    }
+        btnBrowseMkvPropExe.addActionListener(e -> {
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            chooser.setDialogTitle("Select mkvpropedit executable");
+            chooser.setMultiSelectionEnabled(false);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.resetChoosableFileFilters();
+
+            if (Utils.isWindows()) {
+                chooser.setFileFilter(EXE_EXT_FILTER);
+            }
+
+            int open = chooser.showOpenDialog(frmJMkvpropedit);
+
+            if (open == JFileChooser.APPROVE_OPTION) {
+                if (chooser.getSelectedFile().exists()) {
+                    saveIniFile(chooser.getSelectedFile());
                 }
             }
         });
 
-        chbTags.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                boolean state = cbTags.isEnabled();
-                cbTags.setEnabled(!state);
+        cbVideo.addActionListener(e -> lytLyrdPnlVideo.show(lyrdPnlVideo, "subPnlVideo[" + cbVideo.getSelectedIndex() + "]"));
 
-                if (cbTags.getSelectedIndex() == 1) {
-                    txtTags.setEditable(false);
-                    txtTags.setVisible(true);
-                    txtTags.setEnabled(!state);
-                    btnBrowseTags.setVisible(true);
-                    btnBrowseTags.setEnabled(!state);
-                    cbExtTags.setVisible(false);
-                } else if (cbTags.getSelectedIndex() == 2) {
-                    txtTags.setEditable(true);
-                    txtTags.setVisible(true);
-                    txtTags.setEnabled(!state);
-                    btnBrowseTags.setVisible(false);
-                    btnBrowseTags.setEnabled(!state);
-                    cbExtTags.setVisible(true);
-                    cbExtTags.setEnabled(!state);
-                } else if (!chbTags.isSelected()) {
-                    txtTags.setVisible(false);
-                    btnBrowseTags.setVisible(false);
-                    cbExtTags.setVisible(false);
-                }
+        btnAddVideo.addActionListener(e -> {
+            addVideoTrack();
+
+            cbVideo.setSelectedIndex(cbVideo.getItemCount() - 1);
+            if (cbVideo.getItemCount() == MAX_STREAMS) {
+                btnAddVideo.setEnabled(false);
+            }
+
+            if (!btnRemoveVideo.isEnabled()) {
+                btnRemoveVideo.setEnabled(true);
             }
         });
 
-        cbTags.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (cbTags.getSelectedIndex() == 0) {
-                    txtTags.setVisible(false);
-                    btnBrowseTags.setVisible(false);
-                    cbExtTags.setVisible(false);
-                } else if (cbTags.getSelectedIndex() == 1) {
-                    txtTags.setText("");
-                    txtTags.setEditable(false);
-                    txtTags.setVisible(true);
-                    btnBrowseTags.setVisible(true);
-                    cbExtTags.setVisible(false);
-                } else {
-                    txtTags.setText("-tags");
-                    txtTags.setEditable(true);
-                    txtTags.setVisible(true);
-                    btnBrowseTags.setVisible(false);
-                    cbExtTags.setVisible(true);
-                }
+        btnRemoveVideo.addActionListener(e -> {
+            if (cbVideo.getSelectedIndex() > 0) {
+                int idx = cbVideo.getItemCount() - 1;
+
+                cbVideo.removeItemAt(idx);
+                lyrdPnlVideo.remove(idx);
+                nVideo--;
+            }
+
+            if (cbVideo.getItemCount() < MAX_STREAMS && !btnAddVideo.isEnabled()) {
+                btnAddVideo.setEnabled(true);
+            }
+
+            if (cbVideo.getItemCount() == 1) {
+                btnRemoveVideo.setEnabled(false);
+            }
+
+            System.gc();
+        });
+
+        cbAudio.addActionListener(e -> lytLyrdPnlAudio.show(lyrdPnlAudio, "subPnlAudio[" + cbAudio.getSelectedIndex() + "]"));
+
+        btnAddAudio.addActionListener(e -> {
+            addAudioTrack();
+
+            cbAudio.setSelectedIndex(cbAudio.getItemCount() - 1);
+            if (cbAudio.getItemCount() == MAX_STREAMS) {
+                btnAddAudio.setEnabled(false);
+            }
+
+            if (!btnRemoveAudio.isEnabled()) {
+                btnRemoveAudio.setEnabled(true);
             }
         });
 
-        btnBrowseTags.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                chooser.setDialogTitle("Select tags file");
-                chooser.setMultiSelectionEnabled(false);
-                chooser.setAcceptAllFileFilterUsed(false);
-                chooser.resetChoosableFileFilters();
-                chooser.setFileFilter(TXT_EXT_FILTER);
-                chooser.setFileFilter(XML_EXT_FILTER);
+        btnRemoveAudio.addActionListener(e -> {
+            if (cbAudio.getSelectedIndex() > 0) {
+                int idx = cbAudio.getItemCount() - 1;
 
-                int open = chooser.showOpenDialog(frmJMkvpropedit);
+                cbAudio.removeItemAt(idx);
+                lyrdPnlAudio.remove(idx);
+                nAudio--;
+            }
 
-                if (open == JFileChooser.APPROVE_OPTION) {
-                    if (chooser.getSelectedFile().exists()) {
-                        txtTags.setText(chooser.getSelectedFile().toString());
-                    }
-                }
+            if (cbAudio.getItemCount() < MAX_STREAMS && !btnAddAudio.isEnabled()) {
+                btnAddAudio.setEnabled(true);
+            }
+
+            if (cbAudio.getItemCount() == 1) {
+                btnRemoveAudio.setEnabled(false);
+            }
+
+            System.gc();
+        });
+
+        cbSubtitle.addActionListener(e -> lytLyrdPnlSubtitle.show(lyrdPnlSubtitle, "subPnlSubtitle[" + cbSubtitle.getSelectedIndex() + "]"));
+
+        btnAddSubtitle.addActionListener(e -> {
+            addSubtitleTrack();
+
+            cbSubtitle.setSelectedIndex(cbSubtitle.getItemCount() - 1);
+            if (cbSubtitle.getItemCount() == MAX_STREAMS) {
+                btnAddSubtitle.setEnabled(false);
+            }
+
+            if (!btnRemoveSubtitle.isEnabled()) {
+                btnRemoveSubtitle.setEnabled(true);
             }
         });
 
-        chbExtraCmdGeneral.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                boolean state = txtExtraCmdGeneral.isEnabled();
-                txtExtraCmdGeneral.setEnabled(!state);
+        btnRemoveSubtitle.addActionListener(e -> {
+            if (cbSubtitle.getSelectedIndex() > 0) {
+                int idx = cbSubtitle.getItemCount() - 1;
+
+                cbSubtitle.removeItemAt(idx);
+                lyrdPnlSubtitle.remove(idx);
+                nSubtitle--;
+            }
+
+            if (cbSubtitle.getItemCount() < MAX_STREAMS && !btnAddSubtitle.isEnabled()) {
+                btnAddSubtitle.setEnabled(true);
+            }
+
+            if (cbSubtitle.getItemCount() == 1) {
+                btnRemoveSubtitle.setEnabled(false);
+            }
+
+            System.gc();
+        });
+
+        new FileDrop(txtAttachAddFile, files -> {
+            try {
+                if (!files[0].isDirectory()) {
+                    txtAttachAddFile.setText(files[0].getCanonicalPath());
+                }
+            } catch (IOException ignored) {
             }
         });
 
-        chbMkvPropExeDef.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                txtMkvPropExe.setText("mkvpropedit");
-                chbMkvPropExeDef.setEnabled(false);
-                defaultIniFile();
-            }
-        });
+        btnBrowseAttachAddFile.addActionListener(e -> {
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            chooser.setDialogTitle("Select attachment");
+            chooser.setMultiSelectionEnabled(false);
+            chooser.resetChoosableFileFilters();
+            chooser.setAcceptAllFileFilterUsed(true);
 
-        btnBrowseMkvPropExe.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                chooser.setDialogTitle("Select mkvpropedit executable");
-                chooser.setMultiSelectionEnabled(false);
-                chooser.setAcceptAllFileFilterUsed(false);
-                chooser.resetChoosableFileFilters();
+            int open = chooser.showOpenDialog(frmJMkvpropedit);
 
-                if (Utils.isWindows()) {
-                    chooser.setFileFilter(EXE_EXT_FILTER);
-                }
+            if (open == JFileChooser.APPROVE_OPTION) {
+                File f = chooser.getSelectedFile();
 
-                int open = chooser.showOpenDialog(frmJMkvpropedit);
-
-                if (open == JFileChooser.APPROVE_OPTION) {
-                    if (chooser.getSelectedFile().exists()) {
-                        saveIniFile(chooser.getSelectedFile());
-                    }
-                }
-            }
-        });
-
-        cbVideo.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                lytLyrdPnlVideo.show(lyrdPnlVideo, "subPnlVideo[" + cbVideo.getSelectedIndex() + "]");
-            }
-        });
-
-
-        btnAddVideo.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                addVideoTrack();
-
-                cbVideo.setSelectedIndex(cbVideo.getItemCount()-1);
-                if (cbVideo.getItemCount() == MAX_STREAMS) {
-                    btnAddVideo.setEnabled(false);
-                }
-
-                if (!btnRemoveVideo.isEnabled()) {
-                    btnRemoveVideo.setEnabled(true);
-                }
-            }
-
-        });
-
-        btnRemoveVideo.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (cbVideo.getSelectedIndex() > 0) {
-                    int idx = cbVideo.getItemCount()-1;
-
-                    cbVideo.removeItemAt(idx);
-                    lyrdPnlVideo.remove(idx);
-                    nVideo--;
-                }
-
-                if (cbVideo.getItemCount() < MAX_STREAMS && !btnAddVideo.isEnabled()) {
-                    btnAddVideo.setEnabled(true);
-                }
-
-                if (cbVideo.getItemCount() == 1) {
-                    btnRemoveVideo.setEnabled(false);
-                }
-
-                System.gc();
-            }
-        });
-
-
-        cbAudio.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                lytLyrdPnlAudio.show(lyrdPnlAudio, "subPnlAudio[" + cbAudio.getSelectedIndex() + "]");
-            }
-        });
-
-
-        btnAddAudio.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                addAudioTrack();
-
-                cbAudio.setSelectedIndex(cbAudio.getItemCount()-1);
-                if (cbAudio.getItemCount() == MAX_STREAMS) {
-                    btnAddAudio.setEnabled(false);
-                }
-
-                if (!btnRemoveAudio.isEnabled()) {
-                    btnRemoveAudio.setEnabled(true);
-                }
-            }
-
-        });
-
-        btnRemoveAudio.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (cbAudio.getSelectedIndex() > 0) {
-                    int idx = cbAudio.getItemCount()-1;
-
-                    cbAudio.removeItemAt(idx);
-                    lyrdPnlAudio.remove(idx);
-                    nAudio--;
-                }
-
-                if (cbAudio.getItemCount() < MAX_STREAMS && !btnAddAudio.isEnabled()) {
-                    btnAddAudio.setEnabled(true);
-                }
-
-                if (cbAudio.getItemCount() == 1) {
-                    btnRemoveAudio.setEnabled(false);
-                }
-
-                System.gc();
-            }
-        });
-
-
-        cbSubtitle.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                lytLyrdPnlSubtitle.show(lyrdPnlSubtitle, "subPnlSubtitle[" + cbSubtitle.getSelectedIndex() + "]");
-            }
-        });
-
-
-        btnAddSubtitle.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                addSubtitleTrack();
-
-                cbSubtitle.setSelectedIndex(cbSubtitle.getItemCount()-1);
-                if (cbSubtitle.getItemCount() == MAX_STREAMS) {
-                    btnAddSubtitle.setEnabled(false);
-                }
-
-                if (!btnRemoveSubtitle.isEnabled()) {
-                    btnRemoveSubtitle.setEnabled(true);
-                }
-            }
-
-        });
-
-        btnRemoveSubtitle.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (cbSubtitle.getSelectedIndex() > 0) {
-                    int idx = cbSubtitle.getItemCount()-1;
-
-                    cbSubtitle.removeItemAt(idx);
-                    lyrdPnlSubtitle.remove(idx);
-                    nSubtitle--;
-                }
-
-                if (cbSubtitle.getItemCount() < MAX_STREAMS && !btnAddSubtitle.isEnabled()) {
-                    btnAddSubtitle.setEnabled(true);
-                }
-
-                if (cbSubtitle.getItemCount() == 1) {
-                    btnRemoveSubtitle.setEnabled(false);
-                }
-
-                System.gc();
-            }
-        });
-
-        new FileDrop(txtAttachAddFile, new FileDrop.Listener() {
-            public void filesDropped(File[] files) {
-                try {
-                    if (!files[0].isDirectory()) {
-                        txtAttachAddFile.setText(files[0].getCanonicalPath());
-                    }
-                } catch(IOException e) {
-                }
-            }
-        });
-
-        btnBrowseAttachAddFile.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                chooser.setDialogTitle("Select attachment");
-                chooser.setMultiSelectionEnabled(false);
-                chooser.resetChoosableFileFilters();
-                chooser.setAcceptAllFileFilterUsed(true);
-
-
-                int open = chooser.showOpenDialog(frmJMkvpropedit);
-
-                if (open == JFileChooser.APPROVE_OPTION) {
-                    File f = chooser.getSelectedFile();
-
-                    if (f.exists()) {
-                        try {
-                            txtAttachAddFile.setText(f.getCanonicalPath());
-                        } catch (IOException e1) {
-                            e1.printStackTrace();
-                        }
+                if (f.exists()) {
+                    try {
+                        txtAttachAddFile.setText(f.getCanonicalPath());
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
                     }
                 }
             }
@@ -2153,131 +2032,117 @@ public class JMkvpropedit {
             }
         });
 
-        btnAttachAddAdd.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (txtAttachAddFile.getText().trim().isEmpty()) {
-                    JOptionPane.showMessageDialog(null,
-                            "The file is mandatory for the attachment!",
-                            "", JOptionPane.ERROR_MESSAGE);
+        btnAttachAddAdd.addActionListener(e -> {
+            if (txtAttachAddFile.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(null,
+                        "The file is mandatory for the attachment!",
+                        "", JOptionPane.ERROR_MESSAGE);
 
-                    return;
-                }
-
-                String[] rowData = {
-                        txtAttachAddFile.getText(),
-                        txtAttachAddName.getText().trim(),
-                        txtAttachAddDesc.getText().trim(),
-                        cbAttachAddMime.getSelectedItem().toString()
-                        };
-
-                modelAttachmentsAdd.addRow(rowData);
-
-                Utils.adjustColumnPreferredWidths(tblAttachAdd);
-                tblAttachAdd.revalidate();
-
-                txtAttachAddFile.setText("");
-                txtAttachAddName.setText("");
-                txtAttachAddDesc.setText("");
-                cbAttachAddMime.setSelectedIndex(0);
+                return;
             }
+
+            String[] rowData = {
+                    txtAttachAddFile.getText(),
+                    txtAttachAddName.getText().trim(),
+                    txtAttachAddDesc.getText().trim(),
+                    cbAttachAddMime.getSelectedItem().toString()
+            };
+
+            modelAttachmentsAdd.addRow(rowData);
+
+            Utils.adjustColumnPreferredWidths(tblAttachAdd);
+            tblAttachAdd.revalidate();
+
+            txtAttachAddFile.setText("");
+            txtAttachAddName.setText("");
+            txtAttachAddDesc.setText("");
+            cbAttachAddMime.setSelectedIndex(0);
         });
 
-        btnAttachAddEdit.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (txtAttachAddFile.getText().trim().isEmpty()) {
-                    JOptionPane.showMessageDialog(null,
-                            "The file is mandatory for the attachment!",
-                            "", JOptionPane.ERROR_MESSAGE);
+        btnAttachAddEdit.addActionListener(e -> {
+            if (txtAttachAddFile.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(null,
+                        "The file is mandatory for the attachment!",
+                        "", JOptionPane.ERROR_MESSAGE);
 
-                    return;
-                }
-
-                int selection = tblAttachAdd.getSelectedRow();
-
-                String file = txtAttachAddFile.getText().trim();
-                String name = txtAttachAddName.getText().trim();
-                String desc = txtAttachAddDesc.getText().trim();
-                String mime = cbAttachAddMime.getSelectedItem().toString();
-
-                modelAttachmentsAdd.setValueAt(file, selection, 0);
-                modelAttachmentsAdd.setValueAt(name, selection, 1);
-                modelAttachmentsAdd.setValueAt(desc, selection, 2);
-                modelAttachmentsAdd.setValueAt(mime, selection, 3);
-
-                Utils.adjustColumnPreferredWidths(tblAttachAdd);
-                tblAttachAdd.revalidate();
-
-                txtAttachAddFile.setText("");
-                txtAttachAddName.setText("");
-                txtAttachAddDesc.setText("");
-                cbAttachAddMime.setSelectedIndex(0);
-
-                tblAttachAdd.setEnabled(true);
-                btnAttachAddAdd.setEnabled(true);
-                btnAttachAddRemove.setEnabled(false);
-                btnAttachAddEdit.setEnabled(false);
-                btnAttachAddCancel.setEnabled(false);
-                tblAttachAdd.clearSelection();
+                return;
             }
+
+            int selection = tblAttachAdd.getSelectedRow();
+
+            String file = txtAttachAddFile.getText().trim();
+            String name = txtAttachAddName.getText().trim();
+            String desc = txtAttachAddDesc.getText().trim();
+            String mime = cbAttachAddMime.getSelectedItem().toString();
+
+            modelAttachmentsAdd.setValueAt(file, selection, 0);
+            modelAttachmentsAdd.setValueAt(name, selection, 1);
+            modelAttachmentsAdd.setValueAt(desc, selection, 2);
+            modelAttachmentsAdd.setValueAt(mime, selection, 3);
+
+            Utils.adjustColumnPreferredWidths(tblAttachAdd);
+            tblAttachAdd.revalidate();
+
+            txtAttachAddFile.setText("");
+            txtAttachAddName.setText("");
+            txtAttachAddDesc.setText("");
+            cbAttachAddMime.setSelectedIndex(0);
+
+            tblAttachAdd.setEnabled(true);
+            btnAttachAddAdd.setEnabled(true);
+            btnAttachAddRemove.setEnabled(false);
+            btnAttachAddEdit.setEnabled(false);
+            btnAttachAddCancel.setEnabled(false);
+            tblAttachAdd.clearSelection();
         });
 
-        btnAttachAddRemove.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                int selection = tblAttachAdd.getSelectedRow();
+        btnAttachAddRemove.addActionListener(e -> {
+            int selection = tblAttachAdd.getSelectedRow();
 
-                modelAttachmentsAdd.removeRow(selection);
+            modelAttachmentsAdd.removeRow(selection);
 
-                txtAttachAddFile.setText("");
-                txtAttachAddName.setText("");
-                txtAttachAddDesc.setText("");
-                cbAttachAddMime.setSelectedIndex(0);
+            txtAttachAddFile.setText("");
+            txtAttachAddName.setText("");
+            txtAttachAddDesc.setText("");
+            cbAttachAddMime.setSelectedIndex(0);
 
-                tblAttachAdd.setEnabled(true);
-                btnAttachAddAdd.setEnabled(true);
-                btnAttachAddRemove.setEnabled(false);
-                btnAttachAddEdit.setEnabled(false);
-                btnAttachAddCancel.setEnabled(false);
-            }
+            tblAttachAdd.setEnabled(true);
+            btnAttachAddAdd.setEnabled(true);
+            btnAttachAddRemove.setEnabled(false);
+            btnAttachAddEdit.setEnabled(false);
+            btnAttachAddCancel.setEnabled(false);
         });
 
-        btnAttachAddCancel.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                txtAttachAddFile.setText("");
-                txtAttachAddName.setText("");
-                txtAttachAddDesc.setText("");
-                cbAttachAddMime.setSelectedIndex(0);
+        btnAttachAddCancel.addActionListener(e -> {
+            txtAttachAddFile.setText("");
+            txtAttachAddName.setText("");
+            txtAttachAddDesc.setText("");
+            cbAttachAddMime.setSelectedIndex(0);
 
-                tblAttachAdd.setEnabled(true);
-                btnAttachAddAdd.setEnabled(true);
-                btnAttachAddRemove.setEnabled(false);
-                btnAttachAddEdit.setEnabled(false);
-                btnAttachAddCancel.setEnabled(false);
-                tblAttachAdd.clearSelection();
-            }
+            tblAttachAdd.setEnabled(true);
+            btnAttachAddAdd.setEnabled(true);
+            btnAttachAddRemove.setEnabled(false);
+            btnAttachAddEdit.setEnabled(false);
+            btnAttachAddCancel.setEnabled(false);
+            tblAttachAdd.clearSelection();
         });
 
-        rbAttachReplaceName.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                cbAttachReplaceOrig.setVisible(false);
-                txtAttachReplaceOrig.setVisible(true);
-                txtAttachReplaceOrig.setText("");
-            }
+        rbAttachReplaceName.addActionListener(e -> {
+            cbAttachReplaceOrig.setVisible(false);
+            txtAttachReplaceOrig.setVisible(true);
+            txtAttachReplaceOrig.setText("");
         });
 
-        rbAttachReplaceID.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                cbAttachReplaceOrig.setVisible(false);
-                txtAttachReplaceOrig.setVisible(true);
-                txtAttachReplaceOrig.setText("1");
-            }
+        rbAttachReplaceID.addActionListener(e -> {
+            cbAttachReplaceOrig.setVisible(false);
+            txtAttachReplaceOrig.setVisible(true);
+            txtAttachReplaceOrig.setText("1");
         });
 
-        rbAttachReplaceMime.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                txtAttachReplaceOrig.setVisible(false);
-                cbAttachReplaceOrig.setVisible(true);
-                cbAttachReplaceOrig.setSelectedIndex(0);
-            }
+        rbAttachReplaceMime.addActionListener(e -> {
+            txtAttachReplaceOrig.setVisible(false);
+            cbAttachReplaceOrig.setVisible(true);
+            cbAttachReplaceOrig.setSelectedIndex(0);
         });
 
         txtAttachReplaceOrig.addFocusListener(new FocusAdapter() {
@@ -2299,37 +2164,32 @@ public class JMkvpropedit {
             }
         });
 
-        new FileDrop(txtAttachReplaceNew, new FileDrop.Listener() {
-            public void filesDropped(File[] files) {
-                try {
-                    if (!files[0].isDirectory()) {
-                        txtAttachReplaceNew.setText(files[0].getCanonicalPath());
-                    }
-                } catch(IOException e) {
+        new FileDrop(txtAttachReplaceNew, files -> {
+            try {
+                if (!files[0].isDirectory()) {
+                    txtAttachReplaceNew.setText(files[0].getCanonicalPath());
                 }
+            } catch (IOException ignored) {
             }
         });
 
-        btnAttachReplaceNewBrowse.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                chooser.setDialogTitle("Select attachment");
-                chooser.setMultiSelectionEnabled(false);
-                chooser.resetChoosableFileFilters();
-                chooser.setAcceptAllFileFilterUsed(true);
+        btnAttachReplaceNewBrowse.addActionListener(e -> {
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            chooser.setDialogTitle("Select attachment");
+            chooser.setMultiSelectionEnabled(false);
+            chooser.resetChoosableFileFilters();
+            chooser.setAcceptAllFileFilterUsed(true);
 
+            int open = chooser.showOpenDialog(frmJMkvpropedit);
 
-                int open = chooser.showOpenDialog(frmJMkvpropedit);
+            if (open == JFileChooser.APPROVE_OPTION) {
+                File f = chooser.getSelectedFile();
 
-                if (open == JFileChooser.APPROVE_OPTION) {
-                    File f = chooser.getSelectedFile();
-
-                    if (f.exists()) {
-                        try {
-                            txtAttachReplaceNew.setText(f.getCanonicalPath());
-                        } catch (IOException e1) {
-                            e1.printStackTrace();
-                        }
+                if (f.exists()) {
+                    try {
+                        txtAttachReplaceNew.setText(f.getCanonicalPath());
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
                     }
                 }
             }
@@ -2359,7 +2219,7 @@ public class JMkvpropedit {
                         cbAttachReplaceOrig.setVisible(false);
                         rbAttachReplaceName.setSelected(true);
                         txtAttachReplaceOrig.setText(orig);
-                    } else  if (type.equals(rbAttachReplaceID.getText())) {
+                    } else if (type.equals(rbAttachReplaceID.getText())) {
                         txtAttachReplaceOrig.setVisible(true);
                         cbAttachReplaceOrig.setVisible(false);
                         rbAttachReplaceID.setSelected(true);
@@ -2384,152 +2244,143 @@ public class JMkvpropedit {
             }
         });
 
-        btnAttachReplaceAdd.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String type = "";
-                String orig = "";
+        btnAttachReplaceAdd.addActionListener(e -> {
+            String type = "";
+            String orig = "";
 
-                if (rbAttachReplaceName.isSelected()) {
-                    type = rbAttachReplaceName.getText();
-                    orig = txtAttachReplaceOrig.getText().trim();
-                } else if (rbAttachReplaceID.isSelected()) {
-                    type = rbAttachReplaceID.getText();
-                    orig = txtAttachReplaceOrig.getText();
-                } else {
-                    type = rbAttachReplaceMime.getText();
-                    orig = cbAttachReplaceOrig.getSelectedItem().toString();
-                }
-
-                if (orig.isEmpty() || txtAttachReplaceNew.getText().isEmpty()) {
-                    JOptionPane.showMessageDialog(null,
-                            "The original value and replacement are mandatory for the attachment!",
-                            "", JOptionPane.ERROR_MESSAGE);
-
-                    return;
-                }
-
-
-                String[] rowData = {
-                        type,
-                        orig,
-                        txtAttachReplaceNew.getText(),
-                        txtAttachReplaceName.getText().trim(),
-                        txtAttachReplaceDesc.getText().trim(),
-                        cbAttachReplaceMime.getSelectedItem().toString()
-                    };
-
-                modelAttachmentsReplace.addRow(rowData);
-
-                Utils.adjustColumnPreferredWidths(tblAttachReplace);
-                tblAttachReplace.revalidate();
-
-                txtAttachReplaceOrig.setText("");
-                txtAttachReplaceNew.setText("");
-                txtAttachReplaceName.setText("");
-                txtAttachReplaceDesc.setText("");
-                cbAttachReplaceMime.setSelectedIndex(0);
-                rbAttachReplaceName.setSelected(true);
-                txtAttachReplaceOrig.setVisible(true);
-                cbAttachReplaceOrig.setVisible(false);
+            if (rbAttachReplaceName.isSelected()) {
+                type = rbAttachReplaceName.getText();
+                orig = txtAttachReplaceOrig.getText().trim();
+            } else if (rbAttachReplaceID.isSelected()) {
+                type = rbAttachReplaceID.getText();
+                orig = txtAttachReplaceOrig.getText();
+            } else {
+                type = rbAttachReplaceMime.getText();
+                orig = cbAttachReplaceOrig.getSelectedItem().toString();
             }
+
+            if (orig.isEmpty() || txtAttachReplaceNew.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(null,
+                        "The original value and replacement are mandatory for the attachment!",
+                        "", JOptionPane.ERROR_MESSAGE);
+
+                return;
+            }
+
+            String[] rowData = {
+                    type,
+                    orig,
+                    txtAttachReplaceNew.getText(),
+                    txtAttachReplaceName.getText().trim(),
+                    txtAttachReplaceDesc.getText().trim(),
+                    cbAttachReplaceMime.getSelectedItem().toString()
+            };
+
+            modelAttachmentsReplace.addRow(rowData);
+
+            Utils.adjustColumnPreferredWidths(tblAttachReplace);
+            tblAttachReplace.revalidate();
+
+            txtAttachReplaceOrig.setText("");
+            txtAttachReplaceNew.setText("");
+            txtAttachReplaceName.setText("");
+            txtAttachReplaceDesc.setText("");
+            cbAttachReplaceMime.setSelectedIndex(0);
+            rbAttachReplaceName.setSelected(true);
+            txtAttachReplaceOrig.setVisible(true);
+            cbAttachReplaceOrig.setVisible(false);
         });
 
-        btnAttachReplaceEdit.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String type = "";
-                String orig = "";
+        btnAttachReplaceEdit.addActionListener(e -> {
+            String type = "";
+            String orig = "";
 
-                if (rbAttachReplaceName.isSelected()) {
-                    type = rbAttachReplaceName.getText();
-                    orig = txtAttachReplaceOrig.getText().trim();
-                } else if (rbAttachReplaceID.isSelected()) {
-                    type = rbAttachReplaceID.getText();
-                    orig = txtAttachReplaceOrig.getText();
-                } else {
-                    type = rbAttachReplaceMime.getText();
-                    orig = cbAttachReplaceOrig.getSelectedItem().toString();
-                }
-
-                int selection = tblAttachReplace.getSelectedRow();
-
-                if (orig.isEmpty() || txtAttachReplaceNew.getText().isEmpty()) {
-                    JOptionPane.showMessageDialog(null,
-                            "The original value and replacement are mandatory for the attachment!",
-                            "", JOptionPane.ERROR_MESSAGE);
-
-                    return;
-                }
-
-                modelAttachmentsReplace.setValueAt(type, selection, 0);
-                modelAttachmentsReplace.setValueAt(orig, selection, 1);
-                modelAttachmentsReplace.setValueAt(txtAttachReplaceNew.getText(), selection, 2);
-                modelAttachmentsReplace.setValueAt(txtAttachReplaceName.getText(), selection, 3);
-                modelAttachmentsReplace.setValueAt(txtAttachReplaceDesc.getText(), selection, 4);
-                modelAttachmentsReplace.setValueAt(cbAttachReplaceMime.getSelectedItem().toString(), selection, 5);
-
-                Utils.adjustColumnPreferredWidths(tblAttachReplace);
-                tblAttachReplace.revalidate();
-
-                tblAttachReplace.setEnabled(true);
-                btnAttachReplaceAdd.setEnabled(true);
-                btnAttachReplaceEdit.setEnabled(false);
-                btnAttachReplaceRemove.setEnabled(false);
-                btnAttachReplaceCancel.setEnabled(false);
-                tblAttachReplace.clearSelection();
-
-                txtAttachReplaceOrig.setText("");
-                txtAttachReplaceNew.setText("");
-                txtAttachReplaceName.setText("");
-                txtAttachReplaceDesc.setText("");
-                cbAttachReplaceMime.setSelectedIndex(0);
-                rbAttachReplaceName.setSelected(true);
-                txtAttachReplaceOrig.setVisible(true);
-                cbAttachReplaceOrig.setVisible(false);
+            if (rbAttachReplaceName.isSelected()) {
+                type = rbAttachReplaceName.getText();
+                orig = txtAttachReplaceOrig.getText().trim();
+            } else if (rbAttachReplaceID.isSelected()) {
+                type = rbAttachReplaceID.getText();
+                orig = txtAttachReplaceOrig.getText();
+            } else {
+                type = rbAttachReplaceMime.getText();
+                orig = cbAttachReplaceOrig.getSelectedItem().toString();
             }
+
+            int selection = tblAttachReplace.getSelectedRow();
+
+            if (orig.isEmpty() || txtAttachReplaceNew.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(null,
+                        "The original value and replacement are mandatory for the attachment!",
+                        "", JOptionPane.ERROR_MESSAGE);
+
+                return;
+            }
+
+            modelAttachmentsReplace.setValueAt(type, selection, 0);
+            modelAttachmentsReplace.setValueAt(orig, selection, 1);
+            modelAttachmentsReplace.setValueAt(txtAttachReplaceNew.getText(), selection, 2);
+            modelAttachmentsReplace.setValueAt(txtAttachReplaceName.getText(), selection, 3);
+            modelAttachmentsReplace.setValueAt(txtAttachReplaceDesc.getText(), selection, 4);
+            modelAttachmentsReplace.setValueAt(cbAttachReplaceMime.getSelectedItem().toString(), selection, 5);
+
+            Utils.adjustColumnPreferredWidths(tblAttachReplace);
+            tblAttachReplace.revalidate();
+
+            tblAttachReplace.setEnabled(true);
+            btnAttachReplaceAdd.setEnabled(true);
+            btnAttachReplaceEdit.setEnabled(false);
+            btnAttachReplaceRemove.setEnabled(false);
+            btnAttachReplaceCancel.setEnabled(false);
+            tblAttachReplace.clearSelection();
+
+            txtAttachReplaceOrig.setText("");
+            txtAttachReplaceNew.setText("");
+            txtAttachReplaceName.setText("");
+            txtAttachReplaceDesc.setText("");
+            cbAttachReplaceMime.setSelectedIndex(0);
+            rbAttachReplaceName.setSelected(true);
+            txtAttachReplaceOrig.setVisible(true);
+            cbAttachReplaceOrig.setVisible(false);
         });
 
-        btnAttachReplaceRemove.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                int selection = tblAttachReplace.getSelectedRow();
+        btnAttachReplaceRemove.addActionListener(e -> {
+            int selection = tblAttachReplace.getSelectedRow();
 
-                modelAttachmentsReplace.removeRow(selection);
+            modelAttachmentsReplace.removeRow(selection);
 
-                tblAttachReplace.setEnabled(true);
-                btnAttachReplaceAdd.setEnabled(true);
-                btnAttachReplaceEdit.setEnabled(false);
-                btnAttachReplaceRemove.setEnabled(false);
-                btnAttachReplaceCancel.setEnabled(false);
-                tblAttachReplace.clearSelection();
+            tblAttachReplace.setEnabled(true);
+            btnAttachReplaceAdd.setEnabled(true);
+            btnAttachReplaceEdit.setEnabled(false);
+            btnAttachReplaceRemove.setEnabled(false);
+            btnAttachReplaceCancel.setEnabled(false);
+            tblAttachReplace.clearSelection();
 
-                txtAttachReplaceOrig.setText("");
-                txtAttachReplaceNew.setText("");
-                txtAttachReplaceName.setText("");
-                txtAttachReplaceDesc.setText("");
-                cbAttachReplaceMime.setSelectedIndex(0);
-                rbAttachReplaceName.setSelected(true);
-                txtAttachReplaceOrig.setVisible(true);
-                cbAttachReplaceOrig.setVisible(false);
-            }
+            txtAttachReplaceOrig.setText("");
+            txtAttachReplaceNew.setText("");
+            txtAttachReplaceName.setText("");
+            txtAttachReplaceDesc.setText("");
+            cbAttachReplaceMime.setSelectedIndex(0);
+            rbAttachReplaceName.setSelected(true);
+            txtAttachReplaceOrig.setVisible(true);
+            cbAttachReplaceOrig.setVisible(false);
         });
 
-        btnAttachReplaceCancel.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                tblAttachReplace.setEnabled(true);
-                btnAttachReplaceAdd.setEnabled(true);
-                btnAttachReplaceEdit.setEnabled(false);
-                btnAttachReplaceRemove.setEnabled(false);
-                btnAttachReplaceCancel.setEnabled(false);
-                tblAttachReplace.clearSelection();
+        btnAttachReplaceCancel.addActionListener(e -> {
+            tblAttachReplace.setEnabled(true);
+            btnAttachReplaceAdd.setEnabled(true);
+            btnAttachReplaceEdit.setEnabled(false);
+            btnAttachReplaceRemove.setEnabled(false);
+            btnAttachReplaceCancel.setEnabled(false);
+            tblAttachReplace.clearSelection();
 
-                txtAttachReplaceOrig.setText("");
-                txtAttachReplaceNew.setText("");
-                txtAttachReplaceName.setText("");
-                txtAttachReplaceDesc.setText("");
-                cbAttachReplaceMime.setSelectedIndex(0);
-                rbAttachReplaceName.setSelected(true);
-                txtAttachReplaceOrig.setVisible(true);
-                cbAttachReplaceOrig.setVisible(false);
-            }
+            txtAttachReplaceOrig.setText("");
+            txtAttachReplaceNew.setText("");
+            txtAttachReplaceName.setText("");
+            txtAttachReplaceDesc.setText("");
+            cbAttachReplaceMime.setSelectedIndex(0);
+            rbAttachReplaceName.setSelected(true);
+            txtAttachReplaceOrig.setVisible(true);
+            cbAttachReplaceOrig.setVisible(false);
         });
 
         tblAttachDelete.addMouseListener(new MouseAdapter() {
@@ -2571,28 +2422,22 @@ public class JMkvpropedit {
             }
         });
 
-        rbAttachDeleteName.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                cbAttachDeleteValue.setVisible(false);
-                txtAttachDeleteValue.setVisible(true);
-                txtAttachDeleteValue.setText("");
-            }
+        rbAttachDeleteName.addActionListener(e -> {
+            cbAttachDeleteValue.setVisible(false);
+            txtAttachDeleteValue.setVisible(true);
+            txtAttachDeleteValue.setText("");
         });
 
-        rbAttachDeleteID.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                cbAttachDeleteValue.setVisible(false);
-                txtAttachDeleteValue.setVisible(true);
-                txtAttachDeleteValue.setText("1");
-            }
+        rbAttachDeleteID.addActionListener(e -> {
+            cbAttachDeleteValue.setVisible(false);
+            txtAttachDeleteValue.setVisible(true);
+            txtAttachDeleteValue.setText("1");
         });
 
-        rbAttachDeleteMime.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                txtAttachDeleteValue.setVisible(false);
-                cbAttachDeleteValue.setVisible(true);
-                cbAttachDeleteValue.setSelectedIndex(0);
-            }
+        rbAttachDeleteMime.addActionListener(e -> {
+            txtAttachDeleteValue.setVisible(false);
+            cbAttachDeleteValue.setVisible(true);
+            cbAttachDeleteValue.setSelectedIndex(0);
         });
 
         txtAttachDeleteValue.addFocusListener(new FocusAdapter() {
@@ -2614,182 +2459,170 @@ public class JMkvpropedit {
             }
         });
 
-        btnAttachDeleteAdd.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String type = "";
-                String value = "";
+        btnAttachDeleteAdd.addActionListener(e -> {
+            String type = "";
+            String value = "";
 
-                if (rbAttachDeleteName.isSelected()) {
-                    type = rbAttachDeleteName.getText();
-                    value = txtAttachDeleteValue.getText().trim();
-                } else if (rbAttachDeleteID.isSelected()) {
-                    type = rbAttachDeleteID.getText();
-                    value = txtAttachDeleteValue.getText();
-                } else {
-                    type = rbAttachDeleteMime.getText();
-                    value = cbAttachDeleteValue.getSelectedItem().toString();
-                }
-
-                if (value.isEmpty()) {
-                    JOptionPane.showMessageDialog(null,
-                            "The value is mandatory for the attachment!",
-                            "", JOptionPane.ERROR_MESSAGE);
-
-                    return;
-                }
-
-                String[] rowData = { type, value };
-
-                modelAttachmentsDelete.addRow(rowData);
-
-                Utils.adjustColumnPreferredWidths(tblAttachDelete);
-                tblAttachDelete.revalidate();
-
-                rbAttachDeleteName.setSelected(true);
-                cbAttachDeleteValue.setVisible(false);
-                txtAttachDeleteValue.setVisible(true);
-                txtAttachDeleteValue.setText("");
-                tblAttachDelete.clearSelection();
+            if (rbAttachDeleteName.isSelected()) {
+                type = rbAttachDeleteName.getText();
+                value = txtAttachDeleteValue.getText().trim();
+            } else if (rbAttachDeleteID.isSelected()) {
+                type = rbAttachDeleteID.getText();
+                value = txtAttachDeleteValue.getText();
+            } else {
+                type = rbAttachDeleteMime.getText();
+                value = cbAttachDeleteValue.getSelectedItem().toString();
             }
+
+            if (value.isEmpty()) {
+                JOptionPane.showMessageDialog(null,
+                        "The value is mandatory for the attachment!",
+                        "", JOptionPane.ERROR_MESSAGE);
+
+                return;
+            }
+
+            String[] rowData = {type, value};
+
+            modelAttachmentsDelete.addRow(rowData);
+
+            Utils.adjustColumnPreferredWidths(tblAttachDelete);
+            tblAttachDelete.revalidate();
+
+            rbAttachDeleteName.setSelected(true);
+            cbAttachDeleteValue.setVisible(false);
+            txtAttachDeleteValue.setVisible(true);
+            txtAttachDeleteValue.setText("");
+            tblAttachDelete.clearSelection();
         });
 
-        btnAttachDeleteEdit.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String type = "";
-                String value = "";
+        btnAttachDeleteEdit.addActionListener(e -> {
+            String type = "";
+            String value = "";
 
-                if (rbAttachDeleteName.isSelected()) {
-                    type = rbAttachDeleteName.getText();
-                    value = txtAttachDeleteValue.getText().trim();
-                } else if (rbAttachDeleteID.isSelected()) {
-                    type = rbAttachDeleteID.getText();
-                    value = txtAttachDeleteValue.getText();
-                } else {
-                    type = rbAttachDeleteMime.getText();
-                    value = cbAttachDeleteValue.getSelectedItem().toString();
-                }
-
-                int selection = tblAttachDelete.getSelectedRow();
-
-                if (value.isEmpty()) {
-                    JOptionPane.showMessageDialog(null,
-                            "The value is mandatory for the attachment!",
-                            "", JOptionPane.ERROR_MESSAGE);
-
-                    return;
-                }
-
-                modelAttachmentsDelete.setValueAt(type, selection, 0);
-                modelAttachmentsDelete.setValueAt(value, selection, 1);
-
-                Utils.adjustColumnPreferredWidths(tblAttachDelete);
-                tblAttachDelete.revalidate();
-
-                tblAttachDelete.setEnabled(true);
-                btnAttachDeleteAdd.setEnabled(true);
-                btnAttachDeleteEdit.setEnabled(false);
-                btnAttachDeleteRemove.setEnabled(false);
-                btnAttachDeleteCancel.setEnabled(false);
-                tblAttachDelete.clearSelection();
-
-                rbAttachDeleteName.setSelected(true);
-                cbAttachDeleteValue.setVisible(false);
-                txtAttachDeleteValue.setVisible(true);
-                txtAttachDeleteValue.setText("");
-                tblAttachDelete.clearSelection();
+            if (rbAttachDeleteName.isSelected()) {
+                type = rbAttachDeleteName.getText();
+                value = txtAttachDeleteValue.getText().trim();
+            } else if (rbAttachDeleteID.isSelected()) {
+                type = rbAttachDeleteID.getText();
+                value = txtAttachDeleteValue.getText();
+            } else {
+                type = rbAttachDeleteMime.getText();
+                value = cbAttachDeleteValue.getSelectedItem().toString();
             }
+
+            int selection = tblAttachDelete.getSelectedRow();
+
+            if (value.isEmpty()) {
+                JOptionPane.showMessageDialog(null,
+                        "The value is mandatory for the attachment!",
+                        "", JOptionPane.ERROR_MESSAGE);
+
+                return;
+            }
+
+            modelAttachmentsDelete.setValueAt(type, selection, 0);
+            modelAttachmentsDelete.setValueAt(value, selection, 1);
+
+            Utils.adjustColumnPreferredWidths(tblAttachDelete);
+            tblAttachDelete.revalidate();
+
+            tblAttachDelete.setEnabled(true);
+            btnAttachDeleteAdd.setEnabled(true);
+            btnAttachDeleteEdit.setEnabled(false);
+            btnAttachDeleteRemove.setEnabled(false);
+            btnAttachDeleteCancel.setEnabled(false);
+            tblAttachDelete.clearSelection();
+
+            rbAttachDeleteName.setSelected(true);
+            cbAttachDeleteValue.setVisible(false);
+            txtAttachDeleteValue.setVisible(true);
+            txtAttachDeleteValue.setText("");
+            tblAttachDelete.clearSelection();
         });
 
-        btnAttachDeleteRemove.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                int selection = tblAttachDelete.getSelectedRow();
+        btnAttachDeleteRemove.addActionListener(e -> {
+            int selection = tblAttachDelete.getSelectedRow();
 
-                modelAttachmentsDelete.removeRow(selection);
+            modelAttachmentsDelete.removeRow(selection);
 
-                tblAttachDelete.setEnabled(true);
-                btnAttachDeleteAdd.setEnabled(true);
-                btnAttachDeleteEdit.setEnabled(false);
-                btnAttachDeleteRemove.setEnabled(false);
-                btnAttachDeleteCancel.setEnabled(false);
-                tblAttachDelete.clearSelection();
+            tblAttachDelete.setEnabled(true);
+            btnAttachDeleteAdd.setEnabled(true);
+            btnAttachDeleteEdit.setEnabled(false);
+            btnAttachDeleteRemove.setEnabled(false);
+            btnAttachDeleteCancel.setEnabled(false);
+            tblAttachDelete.clearSelection();
 
-                rbAttachDeleteName.setSelected(true);
-                cbAttachDeleteValue.setVisible(false);
-                txtAttachDeleteValue.setVisible(true);
-                txtAttachDeleteValue.setText("");
-            }
+            rbAttachDeleteName.setSelected(true);
+            cbAttachDeleteValue.setVisible(false);
+            txtAttachDeleteValue.setVisible(true);
+            txtAttachDeleteValue.setText("");
         });
 
-        btnAttachDeleteCancel.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                tblAttachDelete.setEnabled(true);
-                btnAttachDeleteAdd.setEnabled(true);
-                btnAttachDeleteEdit.setEnabled(false);
-                btnAttachDeleteRemove.setEnabled(false);
-                btnAttachDeleteCancel.setEnabled(false);
-                tblAttachDelete.clearSelection();
+        btnAttachDeleteCancel.addActionListener(e -> {
+            tblAttachDelete.setEnabled(true);
+            btnAttachDeleteAdd.setEnabled(true);
+            btnAttachDeleteEdit.setEnabled(false);
+            btnAttachDeleteRemove.setEnabled(false);
+            btnAttachDeleteCancel.setEnabled(false);
+            tblAttachDelete.clearSelection();
 
-                rbAttachDeleteName.setSelected(true);
-                cbAttachDeleteValue.setVisible(false);
-                txtAttachDeleteValue.setVisible(true);
-                txtAttachDeleteValue.setText("");
-            }
+            rbAttachDeleteName.setSelected(true);
+            cbAttachDeleteValue.setVisible(false);
+            txtAttachDeleteValue.setVisible(true);
+            txtAttachDeleteValue.setText("");
         });
 
-        btnProcessFiles.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (modelFiles.getSize() == 0) {
+        btnProcessFiles.addActionListener(e -> {
+            if (modelFiles.getSize() == 0) {
+                JOptionPane.showMessageDialog(frmJMkvpropedit,
+                        "The file list is empty!",
+                        "Empty list",
+                        JOptionPane.ERROR_MESSAGE);
+            } else {
+                setCmdLine();
+
+                if (cmdLineBatchOpt.size() == 0) {
                     JOptionPane.showMessageDialog(frmJMkvpropedit,
-                            "The file list is empty!",
-                            "Empty list",
-                            JOptionPane.ERROR_MESSAGE);
+                            "Nothing to do!",
+                            "", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    setCmdLine();
-
-                    if (cmdLineBatchOpt.size() == 0) {
-                        JOptionPane.showMessageDialog(frmJMkvpropedit,
-                                "Nothing to do!",
-                                "",    JOptionPane.INFORMATION_MESSAGE);
+                    if (isExecutableInPath(txtMkvPropExe.getText())) {
+                        executeBatch();
                     } else {
-                        if (isExecutableInPath(txtMkvPropExe.getText())) {
-                            executeBatch();
-                        } else {
-                            JOptionPane.showMessageDialog(frmJMkvpropedit,
-                                    "Mkvpropedit executable not found!" +
-                                    "\nPlease make sure it is installed and included in the system path.\n" +
-                                    "Alternatively, you can manually set the path or copy its executable to the working folder.",
-                                    "", JOptionPane.ERROR_MESSAGE);
-                        }
+                        JOptionPane.showMessageDialog(frmJMkvpropedit,
+                                "Mkvpropedit executable not found!" +
+                                        "\nPlease make sure it is installed and included in the system path.\n" +
+                                        "Alternatively, you can manually set the path or copy its executable to the working folder.",
+                                "", JOptionPane.ERROR_MESSAGE);
                     }
                 }
-
             }
+
         });
 
-        btnGenerateCmdLine.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (modelFiles.getSize() == 0) {
+        btnGenerateCmdLine.addActionListener(e -> {
+            if (modelFiles.getSize() == 0) {
+                JOptionPane.showMessageDialog(frmJMkvpropedit,
+                        "The file list is empty!",
+                        "Empty list",
+                        JOptionPane.ERROR_MESSAGE);
+            } else {
+                setCmdLine();
+
+                if (cmdLineBatch.size() == 0) {
                     JOptionPane.showMessageDialog(frmJMkvpropedit,
-                            "The file list is empty!",
-                            "Empty list",
-                            JOptionPane.ERROR_MESSAGE);
+                            "Nothing to do!",
+                            "", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    setCmdLine();
+                    txtOutput.setText("");
 
-                    if (cmdLineBatch.size() == 0) {
-                        JOptionPane.showMessageDialog(frmJMkvpropedit,
-                                "Nothing to do!",
-                                "",    JOptionPane.INFORMATION_MESSAGE);
-                    } else {
-                        txtOutput.setText("");
-
-                        if (cmdLineBatch.size() > 0) {
-                            for (int i = 0; i < modelFiles.size(); i++) {
-                                txtOutput.append(cmdLineBatch.get(i) + "\n");
-                            }
-
-                            pnlTabs.setSelectedIndex(pnlTabs.getTabCount()-1);
+                    if (cmdLineBatch.size() > 0) {
+                        for (int i = 0; i < modelFiles.size(); i++) {
+                            txtOutput.append(cmdLineBatch.get(i) + "\n");
                         }
+
+                        pnlTabs.setSelectedIndex(pnlTabs.getTabCount() - 1);
                     }
                 }
             }
@@ -2802,7 +2635,7 @@ public class JMkvpropedit {
     private void addVideoTrack() {
         if (nVideo < MAX_STREAMS) {
             subPnlVideo[nVideo] = new JPanel();
-            lyrdPnlVideo.add(subPnlVideo[nVideo], "subPnlVideo[" + nVideo +"]");
+            lyrdPnlVideo.add(subPnlVideo[nVideo], "subPnlVideo[" + nVideo + "]");
             GridBagLayout gbl_subPnlVideo = new GridBagLayout();
             gbl_subPnlVideo.columnWidths = new int[]{0, 0, 0};
             gbl_subPnlVideo.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -2962,9 +2795,9 @@ public class JMkvpropedit {
             gbc_chbLangVideo.gridy = 6;
             subPnlVideo[nVideo].add(chbLangVideo[nVideo], gbc_chbLangVideo);
 
-            cbLangVideo[nVideo] = new JComboBox<String>();
+            cbLangVideo[nVideo] = new JComboBox<>();
             cbLangVideo[nVideo].setEnabled(false);
-            cbLangVideo[nVideo].setModel(new DefaultComboBoxModel<String>(mkvStrings.getLangNames()));
+            cbLangVideo[nVideo].setModel(new DefaultComboBoxModel(mkvStrings.getLangNames()));
             cbLangVideo[nVideo].setSelectedIndex(mkvStrings.getLangCodeList().indexOf("und"));
             GridBagConstraints gbc_cbLangVideo = new GridBagConstraints();
             gbc_cbLangVideo.insets = new Insets(0, 0, 10, 0);
@@ -2999,79 +2832,19 @@ public class JMkvpropedit {
 
             /* End of mouse events for right-click menu */
 
-            chbEditVideo[nVideo].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbVideo = cbVideo.getSelectedIndex();
-                    boolean state = chbDefaultVideo[curCbVideo].isEnabled();
+            chbEditVideo[nVideo].addActionListener(e -> {
+                int curCbVideo = cbVideo.getSelectedIndex();
+                boolean state = chbDefaultVideo[curCbVideo].isEnabled();
 
-                    chbDefaultVideo[curCbVideo].setEnabled(!state);
-                    chbForcedVideo[curCbVideo].setEnabled(!state);
-                    chbNameVideo[curCbVideo].setEnabled(!state);
-                    chbLangVideo[curCbVideo].setEnabled(!state);
-                    chbExtraCmdVideo[curCbVideo].setEnabled(!state);
+                chbDefaultVideo[curCbVideo].setEnabled(!state);
+                chbForcedVideo[curCbVideo].setEnabled(!state);
+                chbNameVideo[curCbVideo].setEnabled(!state);
+                chbLangVideo[curCbVideo].setEnabled(!state);
+                chbExtraCmdVideo[curCbVideo].setEnabled(!state);
 
-                    if (txtNameVideo[curCbVideo].isEnabled() || chbNameVideo[curCbVideo].isSelected()) {
-                        txtNameVideo[curCbVideo].setEnabled(!state);
-                        chbNumbVideo[curCbVideo].setEnabled(!state);
-
-                        if (chbNumbVideo[curCbVideo].isSelected()) {
-                            lblNumbStartVideo[curCbVideo].setEnabled(!state);
-                            txtNumbStartVideo[curCbVideo].setEnabled(!state);
-                            lblNumbPadVideo[curCbVideo].setEnabled(!state);
-                            txtNumbPadVideo[curCbVideo].setEnabled(!state);
-                            lblNumbExplainVideo[curCbVideo].setEnabled(!state);
-                        }
-                    }
-
-                    if (rbNoDefVideo[curCbVideo].isEnabled() || chbDefaultVideo[curCbVideo].isSelected()) {
-                        rbNoDefVideo[curCbVideo].setEnabled(!state);
-                        rbYesDefVideo[curCbVideo].setEnabled(!state);
-                    }
-
-                    if (rbNoForcedVideo[curCbVideo].isEnabled() || chbForcedVideo[curCbVideo].isSelected()) {
-                        rbNoForcedVideo[curCbVideo].setEnabled(!state);
-                        rbYesForcedVideo[curCbVideo].setEnabled(!state);
-                    }
-
-                    if (cbLangVideo[curCbVideo].isEnabled() || chbLangVideo[curCbVideo].isSelected()) {
-                        cbLangVideo[curCbVideo].setEnabled(!state);
-                    }
-
-                    if (txtExtraCmdVideo[curCbVideo].isEnabled() || chbExtraCmdVideo[curCbVideo].isSelected()) {
-                        chbExtraCmdVideo[curCbVideo].setEnabled(!state);
-                        txtExtraCmdVideo[curCbVideo].setEnabled(!state);
-                    }
-                }
-            });
-
-            chbDefaultVideo[nVideo].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbVideo = cbVideo.getSelectedIndex();
-                    boolean state = rbNoDefVideo[curCbVideo].isEnabled();
-
-                    rbNoDefVideo[curCbVideo].setEnabled(!state);
-                    rbYesDefVideo[curCbVideo].setEnabled(!state);
-                }
-            });
-
-            chbForcedVideo[nVideo].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbVideo = cbVideo.getSelectedIndex();
-                    boolean state = rbNoForcedVideo[curCbVideo].isEnabled();
-
-                    rbNoForcedVideo[curCbVideo].setEnabled(!state);
-                    rbYesForcedVideo[curCbVideo].setEnabled(!state);
-                }
-            });
-
-
-            chbNameVideo[nVideo].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbVideo = cbVideo.getSelectedIndex();
-                    boolean state = chbNumbVideo[curCbVideo].isEnabled();
-
-                    chbNumbVideo[curCbVideo].setEnabled(!state);
+                if (txtNameVideo[curCbVideo].isEnabled() || chbNameVideo[curCbVideo].isSelected()) {
                     txtNameVideo[curCbVideo].setEnabled(!state);
+                    chbNumbVideo[curCbVideo].setEnabled(!state);
 
                     if (chbNumbVideo[curCbVideo].isSelected()) {
                         lblNumbStartVideo[curCbVideo].setEnabled(!state);
@@ -3081,19 +2854,68 @@ public class JMkvpropedit {
                         lblNumbExplainVideo[curCbVideo].setEnabled(!state);
                     }
                 }
+
+                if (rbNoDefVideo[curCbVideo].isEnabled() || chbDefaultVideo[curCbVideo].isSelected()) {
+                    rbNoDefVideo[curCbVideo].setEnabled(!state);
+                    rbYesDefVideo[curCbVideo].setEnabled(!state);
+                }
+
+                if (rbNoForcedVideo[curCbVideo].isEnabled() || chbForcedVideo[curCbVideo].isSelected()) {
+                    rbNoForcedVideo[curCbVideo].setEnabled(!state);
+                    rbYesForcedVideo[curCbVideo].setEnabled(!state);
+                }
+
+                if (cbLangVideo[curCbVideo].isEnabled() || chbLangVideo[curCbVideo].isSelected()) {
+                    cbLangVideo[curCbVideo].setEnabled(!state);
+                }
+
+                if (txtExtraCmdVideo[curCbVideo].isEnabled() || chbExtraCmdVideo[curCbVideo].isSelected()) {
+                    chbExtraCmdVideo[curCbVideo].setEnabled(!state);
+                    txtExtraCmdVideo[curCbVideo].setEnabled(!state);
+                }
             });
 
-            chbNumbVideo[nVideo].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbVideo = cbVideo.getSelectedIndex();
-                    boolean state = txtNumbStartVideo[curCbVideo].isEnabled();
+            chbDefaultVideo[nVideo].addActionListener(e -> {
+                int curCbVideo = cbVideo.getSelectedIndex();
+                boolean state = rbNoDefVideo[curCbVideo].isEnabled();
 
+                rbNoDefVideo[curCbVideo].setEnabled(!state);
+                rbYesDefVideo[curCbVideo].setEnabled(!state);
+            });
+
+            chbForcedVideo[nVideo].addActionListener(e -> {
+                int curCbVideo = cbVideo.getSelectedIndex();
+                boolean state = rbNoForcedVideo[curCbVideo].isEnabled();
+
+                rbNoForcedVideo[curCbVideo].setEnabled(!state);
+                rbYesForcedVideo[curCbVideo].setEnabled(!state);
+            });
+
+            chbNameVideo[nVideo].addActionListener(e -> {
+                int curCbVideo = cbVideo.getSelectedIndex();
+                boolean state = chbNumbVideo[curCbVideo].isEnabled();
+
+                chbNumbVideo[curCbVideo].setEnabled(!state);
+                txtNameVideo[curCbVideo].setEnabled(!state);
+
+                if (chbNumbVideo[curCbVideo].isSelected()) {
                     lblNumbStartVideo[curCbVideo].setEnabled(!state);
                     txtNumbStartVideo[curCbVideo].setEnabled(!state);
                     lblNumbPadVideo[curCbVideo].setEnabled(!state);
                     txtNumbPadVideo[curCbVideo].setEnabled(!state);
                     lblNumbExplainVideo[curCbVideo].setEnabled(!state);
                 }
+            });
+
+            chbNumbVideo[nVideo].addActionListener(e -> {
+                int curCbVideo = cbVideo.getSelectedIndex();
+                boolean state = txtNumbStartVideo[curCbVideo].isEnabled();
+
+                lblNumbStartVideo[curCbVideo].setEnabled(!state);
+                txtNumbStartVideo[curCbVideo].setEnabled(!state);
+                lblNumbPadVideo[curCbVideo].setEnabled(!state);
+                txtNumbPadVideo[curCbVideo].setEnabled(!state);
+                lblNumbExplainVideo[curCbVideo].setEnabled(!state);
             });
 
             txtNumbStartVideo[nVideo].addFocusListener(new FocusAdapter() {
@@ -3126,25 +2948,21 @@ public class JMkvpropedit {
                 }
             });
 
-            chbLangVideo[nVideo].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbVideo = cbVideo.getSelectedIndex();
-                    boolean state = cbLangVideo[curCbVideo].isEnabled();
+            chbLangVideo[nVideo].addActionListener(e -> {
+                int curCbVideo = cbVideo.getSelectedIndex();
+                boolean state = cbLangVideo[curCbVideo].isEnabled();
 
-                    cbLangVideo[curCbVideo].setEnabled(!state);
-                }
+                cbLangVideo[curCbVideo].setEnabled(!state);
             });
 
-            chbExtraCmdVideo[nVideo].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbVideo = cbVideo.getSelectedIndex();
-                    boolean state = txtExtraCmdVideo[curCbVideo].isEnabled();
+            chbExtraCmdVideo[nVideo].addActionListener(e -> {
+                int curCbVideo = cbVideo.getSelectedIndex();
+                boolean state = txtExtraCmdVideo[curCbVideo].isEnabled();
 
-                    txtExtraCmdVideo[curCbVideo].setEnabled(!state);
-                }
+                txtExtraCmdVideo[curCbVideo].setEnabled(!state);
             });
 
-            cbVideo.addItem("Video Track " + (nVideo+1));
+            cbVideo.addItem("Video Track " + (nVideo + 1));
         }
 
         nVideo++;
@@ -3153,7 +2971,7 @@ public class JMkvpropedit {
     private void addAudioTrack() {
         if (nAudio < MAX_STREAMS) {
             subPnlAudio[nAudio] = new JPanel();
-            lyrdPnlAudio.add(subPnlAudio[nAudio], "subPnlAudio[" + nAudio +"]");
+            lyrdPnlAudio.add(subPnlAudio[nAudio], "subPnlAudio[" + nAudio + "]");
             GridBagLayout gbl_subPnlAudio = new GridBagLayout();
             gbl_subPnlAudio.columnWidths = new int[]{0, 0, 0};
             gbl_subPnlAudio.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -3313,9 +3131,9 @@ public class JMkvpropedit {
             gbc_chbLangAudio.gridy = 6;
             subPnlAudio[nAudio].add(chbLangAudio[nAudio], gbc_chbLangAudio);
 
-            cbLangAudio[nAudio] = new JComboBox<String>();
+            cbLangAudio[nAudio] = new JComboBox<>();
             cbLangAudio[nAudio].setEnabled(false);
-            cbLangAudio[nAudio].setModel(new DefaultComboBoxModel<String>(mkvStrings.getLangNames()));
+            cbLangAudio[nAudio].setModel(new DefaultComboBoxModel<>(mkvStrings.getLangNames()));
             cbLangAudio[nAudio].setSelectedIndex(mkvStrings.getLangCodeList().indexOf("und"));
             GridBagConstraints gbc_cbLangAudio = new GridBagConstraints();
             gbc_cbLangAudio.insets = new Insets(0, 0, 10, 0);
@@ -3350,79 +3168,19 @@ public class JMkvpropedit {
 
             /* End of mouse events for right-click menu */
 
-            chbEditAudio[nAudio].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbAudio = cbAudio.getSelectedIndex();
-                    boolean state = chbDefaultAudio[curCbAudio].isEnabled();
+            chbEditAudio[nAudio].addActionListener(e -> {
+                int curCbAudio = cbAudio.getSelectedIndex();
+                boolean state = chbDefaultAudio[curCbAudio].isEnabled();
 
-                    chbDefaultAudio[curCbAudio].setEnabled(!state);
-                    chbForcedAudio[curCbAudio].setEnabled(!state);
-                    chbNameAudio[curCbAudio].setEnabled(!state);
-                    chbLangAudio[curCbAudio].setEnabled(!state);
-                    chbExtraCmdAudio[curCbAudio].setEnabled(!state);
+                chbDefaultAudio[curCbAudio].setEnabled(!state);
+                chbForcedAudio[curCbAudio].setEnabled(!state);
+                chbNameAudio[curCbAudio].setEnabled(!state);
+                chbLangAudio[curCbAudio].setEnabled(!state);
+                chbExtraCmdAudio[curCbAudio].setEnabled(!state);
 
-                    if (txtNameAudio[curCbAudio].isEnabled() || chbNameAudio[curCbAudio].isSelected()) {
-                        txtNameAudio[curCbAudio].setEnabled(!state);
-                        chbNumbAudio[curCbAudio].setEnabled(!state);
-
-                        if (chbNumbAudio[curCbAudio].isSelected()) {
-                            lblNumbStartAudio[curCbAudio].setEnabled(!state);
-                            txtNumbStartAudio[curCbAudio].setEnabled(!state);
-                            lblNumbPadAudio[curCbAudio].setEnabled(!state);
-                            txtNumbPadAudio[curCbAudio].setEnabled(!state);
-                            lblNumbExplainAudio[curCbAudio].setEnabled(!state);
-                        }
-                    }
-
-                    if (rbNoDefAudio[curCbAudio].isEnabled() || chbDefaultAudio[curCbAudio].isSelected()) {
-                        rbNoDefAudio[curCbAudio].setEnabled(!state);
-                        rbYesDefAudio[curCbAudio].setEnabled(!state);
-                    }
-
-                    if (rbNoForcedAudio[curCbAudio].isEnabled() || chbForcedAudio[curCbAudio].isSelected()) {
-                        rbNoForcedAudio[curCbAudio].setEnabled(!state);
-                        rbYesForcedAudio[curCbAudio].setEnabled(!state);
-                    }
-
-                    if (cbLangAudio[curCbAudio].isEnabled() || chbLangAudio[curCbAudio].isSelected()) {
-                        cbLangAudio[curCbAudio].setEnabled(!state);
-                    }
-
-                    if (txtExtraCmdAudio[curCbAudio].isEnabled() || chbExtraCmdAudio[curCbAudio].isSelected()) {
-                        chbExtraCmdAudio[curCbAudio].setEnabled(!state);
-                        txtExtraCmdAudio[curCbAudio].setEnabled(!state);
-                    }
-                }
-            });
-
-            chbDefaultAudio[nAudio].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbAudio = cbAudio.getSelectedIndex();
-                    boolean state = rbNoDefAudio[curCbAudio].isEnabled();
-
-                    rbNoDefAudio[curCbAudio].setEnabled(!state);
-                    rbYesDefAudio[curCbAudio].setEnabled(!state);
-                }
-            });
-
-            chbForcedAudio[nAudio].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbAudio = cbAudio.getSelectedIndex();
-                    boolean state = rbNoForcedAudio[curCbAudio].isEnabled();
-
-                    rbNoForcedAudio[curCbAudio].setEnabled(!state);
-                    rbYesForcedAudio[curCbAudio].setEnabled(!state);
-                }
-            });
-
-
-            chbNameAudio[nAudio].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbAudio = cbAudio.getSelectedIndex();
-                    boolean state = chbNumbAudio[curCbAudio].isEnabled();
-
-                    chbNumbAudio[curCbAudio].setEnabled(!state);
+                if (txtNameAudio[curCbAudio].isEnabled() || chbNameAudio[curCbAudio].isSelected()) {
                     txtNameAudio[curCbAudio].setEnabled(!state);
+                    chbNumbAudio[curCbAudio].setEnabled(!state);
 
                     if (chbNumbAudio[curCbAudio].isSelected()) {
                         lblNumbStartAudio[curCbAudio].setEnabled(!state);
@@ -3432,19 +3190,68 @@ public class JMkvpropedit {
                         lblNumbExplainAudio[curCbAudio].setEnabled(!state);
                     }
                 }
+
+                if (rbNoDefAudio[curCbAudio].isEnabled() || chbDefaultAudio[curCbAudio].isSelected()) {
+                    rbNoDefAudio[curCbAudio].setEnabled(!state);
+                    rbYesDefAudio[curCbAudio].setEnabled(!state);
+                }
+
+                if (rbNoForcedAudio[curCbAudio].isEnabled() || chbForcedAudio[curCbAudio].isSelected()) {
+                    rbNoForcedAudio[curCbAudio].setEnabled(!state);
+                    rbYesForcedAudio[curCbAudio].setEnabled(!state);
+                }
+
+                if (cbLangAudio[curCbAudio].isEnabled() || chbLangAudio[curCbAudio].isSelected()) {
+                    cbLangAudio[curCbAudio].setEnabled(!state);
+                }
+
+                if (txtExtraCmdAudio[curCbAudio].isEnabled() || chbExtraCmdAudio[curCbAudio].isSelected()) {
+                    chbExtraCmdAudio[curCbAudio].setEnabled(!state);
+                    txtExtraCmdAudio[curCbAudio].setEnabled(!state);
+                }
             });
 
-            chbNumbAudio[nAudio].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbAudio = cbAudio.getSelectedIndex();
-                    boolean state = txtNumbStartAudio[curCbAudio].isEnabled();
+            chbDefaultAudio[nAudio].addActionListener(e -> {
+                int curCbAudio = cbAudio.getSelectedIndex();
+                boolean state = rbNoDefAudio[curCbAudio].isEnabled();
 
+                rbNoDefAudio[curCbAudio].setEnabled(!state);
+                rbYesDefAudio[curCbAudio].setEnabled(!state);
+            });
+
+            chbForcedAudio[nAudio].addActionListener(e -> {
+                int curCbAudio = cbAudio.getSelectedIndex();
+                boolean state = rbNoForcedAudio[curCbAudio].isEnabled();
+
+                rbNoForcedAudio[curCbAudio].setEnabled(!state);
+                rbYesForcedAudio[curCbAudio].setEnabled(!state);
+            });
+
+            chbNameAudio[nAudio].addActionListener(e -> {
+                int curCbAudio = cbAudio.getSelectedIndex();
+                boolean state = chbNumbAudio[curCbAudio].isEnabled();
+
+                chbNumbAudio[curCbAudio].setEnabled(!state);
+                txtNameAudio[curCbAudio].setEnabled(!state);
+
+                if (chbNumbAudio[curCbAudio].isSelected()) {
                     lblNumbStartAudio[curCbAudio].setEnabled(!state);
                     txtNumbStartAudio[curCbAudio].setEnabled(!state);
                     lblNumbPadAudio[curCbAudio].setEnabled(!state);
                     txtNumbPadAudio[curCbAudio].setEnabled(!state);
                     lblNumbExplainAudio[curCbAudio].setEnabled(!state);
                 }
+            });
+
+            chbNumbAudio[nAudio].addActionListener(e -> {
+                int curCbAudio = cbAudio.getSelectedIndex();
+                boolean state = txtNumbStartAudio[curCbAudio].isEnabled();
+
+                lblNumbStartAudio[curCbAudio].setEnabled(!state);
+                txtNumbStartAudio[curCbAudio].setEnabled(!state);
+                lblNumbPadAudio[curCbAudio].setEnabled(!state);
+                txtNumbPadAudio[curCbAudio].setEnabled(!state);
+                lblNumbExplainAudio[curCbAudio].setEnabled(!state);
             });
 
             txtNumbStartAudio[nAudio].addFocusListener(new FocusAdapter() {
@@ -3477,25 +3284,21 @@ public class JMkvpropedit {
                 }
             });
 
-            chbLangAudio[nAudio].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbAudio = cbAudio.getSelectedIndex();
-                    boolean state = cbLangAudio[curCbAudio].isEnabled();
+            chbLangAudio[nAudio].addActionListener(e -> {
+                int curCbAudio = cbAudio.getSelectedIndex();
+                boolean state = cbLangAudio[curCbAudio].isEnabled();
 
-                    cbLangAudio[curCbAudio].setEnabled(!state);
-                }
+                cbLangAudio[curCbAudio].setEnabled(!state);
             });
 
-            chbExtraCmdAudio[nAudio].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbAudio = cbAudio.getSelectedIndex();
-                    boolean state = txtExtraCmdAudio[curCbAudio].isEnabled();
+            chbExtraCmdAudio[nAudio].addActionListener(e -> {
+                int curCbAudio = cbAudio.getSelectedIndex();
+                boolean state = txtExtraCmdAudio[curCbAudio].isEnabled();
 
-                    txtExtraCmdAudio[curCbAudio].setEnabled(!state);
-                }
+                txtExtraCmdAudio[curCbAudio].setEnabled(!state);
             });
 
-            cbAudio.addItem("Audio Track " + (nAudio+1));
+            cbAudio.addItem("Audio Track " + (nAudio + 1));
         }
 
         nAudio++;
@@ -3504,7 +3307,7 @@ public class JMkvpropedit {
     private void addSubtitleTrack() {
         if (nSubtitle < MAX_STREAMS) {
             subPnlSubtitle[nSubtitle] = new JPanel();
-            lyrdPnlSubtitle.add(subPnlSubtitle[nSubtitle], "subPnlSubtitle[" + nSubtitle +"]");
+            lyrdPnlSubtitle.add(subPnlSubtitle[nSubtitle], "subPnlSubtitle[" + nSubtitle + "]");
             GridBagLayout gbl_subPnlSubtitle = new GridBagLayout();
             gbl_subPnlSubtitle.columnWidths = new int[]{0, 0, 0};
             gbl_subPnlSubtitle.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -3664,9 +3467,9 @@ public class JMkvpropedit {
             gbc_chbLangSubtitle.gridy = 6;
             subPnlSubtitle[nSubtitle].add(chbLangSubtitle[nSubtitle], gbc_chbLangSubtitle);
 
-            cbLangSubtitle[nSubtitle] = new JComboBox<String>();
+            cbLangSubtitle[nSubtitle] = new JComboBox<>();
             cbLangSubtitle[nSubtitle].setEnabled(false);
-            cbLangSubtitle[nSubtitle].setModel(new DefaultComboBoxModel<String>(mkvStrings.getLangNames()));
+            cbLangSubtitle[nSubtitle].setModel(new DefaultComboBoxModel<>(mkvStrings.getLangNames()));
             cbLangSubtitle[nSubtitle].setSelectedIndex(mkvStrings.getLangCodeList().indexOf("und"));
             GridBagConstraints gbc_cbLangSubtitle = new GridBagConstraints();
             gbc_cbLangSubtitle.insets = new Insets(0, 0, 10, 0);
@@ -3701,79 +3504,19 @@ public class JMkvpropedit {
 
             /* End of mouse events for right-click menu */
 
-            chbEditSubtitle[nSubtitle].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbSubtitle = cbSubtitle.getSelectedIndex();
-                    boolean state = chbDefaultSubtitle[curCbSubtitle].isEnabled();
+            chbEditSubtitle[nSubtitle].addActionListener(e -> {
+                int curCbSubtitle = cbSubtitle.getSelectedIndex();
+                boolean state = chbDefaultSubtitle[curCbSubtitle].isEnabled();
 
-                    chbDefaultSubtitle[curCbSubtitle].setEnabled(!state);
-                    chbForcedSubtitle[curCbSubtitle].setEnabled(!state);
-                    chbNameSubtitle[curCbSubtitle].setEnabled(!state);
-                    chbLangSubtitle[curCbSubtitle].setEnabled(!state);
-                    chbExtraCmdSubtitle[curCbSubtitle].setEnabled(!state);
+                chbDefaultSubtitle[curCbSubtitle].setEnabled(!state);
+                chbForcedSubtitle[curCbSubtitle].setEnabled(!state);
+                chbNameSubtitle[curCbSubtitle].setEnabled(!state);
+                chbLangSubtitle[curCbSubtitle].setEnabled(!state);
+                chbExtraCmdSubtitle[curCbSubtitle].setEnabled(!state);
 
-                    if (txtNameSubtitle[curCbSubtitle].isEnabled() || chbNameSubtitle[curCbSubtitle].isSelected()) {
-                        txtNameSubtitle[curCbSubtitle].setEnabled(!state);
-                        chbNumbSubtitle[curCbSubtitle].setEnabled(!state);
-
-                        if (chbNumbSubtitle[curCbSubtitle].isSelected()) {
-                            lblNumbStartSubtitle[curCbSubtitle].setEnabled(!state);
-                            txtNumbStartSubtitle[curCbSubtitle].setEnabled(!state);
-                            lblNumbPadSubtitle[curCbSubtitle].setEnabled(!state);
-                            txtNumbPadSubtitle[curCbSubtitle].setEnabled(!state);
-                            lblNumbExplainSubtitle[curCbSubtitle].setEnabled(!state);
-                        }
-                    }
-
-                    if (rbNoDefSubtitle[curCbSubtitle].isEnabled() || chbDefaultSubtitle[curCbSubtitle].isSelected()) {
-                        rbNoDefSubtitle[curCbSubtitle].setEnabled(!state);
-                        rbYesDefSubtitle[curCbSubtitle].setEnabled(!state);
-                    }
-
-                    if (rbNoForcedSubtitle[curCbSubtitle].isEnabled() || chbForcedSubtitle[curCbSubtitle].isSelected()) {
-                        rbNoForcedSubtitle[curCbSubtitle].setEnabled(!state);
-                        rbYesForcedSubtitle[curCbSubtitle].setEnabled(!state);
-                    }
-
-                    if (cbLangSubtitle[curCbSubtitle].isEnabled() || chbLangSubtitle[curCbSubtitle].isSelected()) {
-                        cbLangSubtitle[curCbSubtitle].setEnabled(!state);
-                    }
-
-                    if (txtExtraCmdSubtitle[curCbSubtitle].isEnabled() || chbExtraCmdSubtitle[curCbSubtitle].isSelected()) {
-                        chbExtraCmdSubtitle[curCbSubtitle].setEnabled(!state);
-                        txtExtraCmdSubtitle[curCbSubtitle].setEnabled(!state);
-                    }
-                }
-            });
-
-            chbDefaultSubtitle[nSubtitle].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbSubtitle = cbSubtitle.getSelectedIndex();
-                    boolean state = rbNoDefSubtitle[curCbSubtitle].isEnabled();
-
-                    rbNoDefSubtitle[curCbSubtitle].setEnabled(!state);
-                    rbYesDefSubtitle[curCbSubtitle].setEnabled(!state);
-                }
-            });
-
-            chbForcedSubtitle[nSubtitle].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbSubtitle = cbSubtitle.getSelectedIndex();
-                    boolean state = rbNoForcedSubtitle[curCbSubtitle].isEnabled();
-
-                    rbNoForcedSubtitle[curCbSubtitle].setEnabled(!state);
-                    rbYesForcedSubtitle[curCbSubtitle].setEnabled(!state);
-                }
-            });
-
-
-            chbNameSubtitle[nSubtitle].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbSubtitle = cbSubtitle.getSelectedIndex();
-                    boolean state = chbNumbSubtitle[curCbSubtitle].isEnabled();
-
-                    chbNumbSubtitle[curCbSubtitle].setEnabled(!state);
+                if (txtNameSubtitle[curCbSubtitle].isEnabled() || chbNameSubtitle[curCbSubtitle].isSelected()) {
                     txtNameSubtitle[curCbSubtitle].setEnabled(!state);
+                    chbNumbSubtitle[curCbSubtitle].setEnabled(!state);
 
                     if (chbNumbSubtitle[curCbSubtitle].isSelected()) {
                         lblNumbStartSubtitle[curCbSubtitle].setEnabled(!state);
@@ -3783,19 +3526,68 @@ public class JMkvpropedit {
                         lblNumbExplainSubtitle[curCbSubtitle].setEnabled(!state);
                     }
                 }
+
+                if (rbNoDefSubtitle[curCbSubtitle].isEnabled() || chbDefaultSubtitle[curCbSubtitle].isSelected()) {
+                    rbNoDefSubtitle[curCbSubtitle].setEnabled(!state);
+                    rbYesDefSubtitle[curCbSubtitle].setEnabled(!state);
+                }
+
+                if (rbNoForcedSubtitle[curCbSubtitle].isEnabled() || chbForcedSubtitle[curCbSubtitle].isSelected()) {
+                    rbNoForcedSubtitle[curCbSubtitle].setEnabled(!state);
+                    rbYesForcedSubtitle[curCbSubtitle].setEnabled(!state);
+                }
+
+                if (cbLangSubtitle[curCbSubtitle].isEnabled() || chbLangSubtitle[curCbSubtitle].isSelected()) {
+                    cbLangSubtitle[curCbSubtitle].setEnabled(!state);
+                }
+
+                if (txtExtraCmdSubtitle[curCbSubtitle].isEnabled() || chbExtraCmdSubtitle[curCbSubtitle].isSelected()) {
+                    chbExtraCmdSubtitle[curCbSubtitle].setEnabled(!state);
+                    txtExtraCmdSubtitle[curCbSubtitle].setEnabled(!state);
+                }
             });
 
-            chbNumbSubtitle[nSubtitle].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbSubtitle = cbSubtitle.getSelectedIndex();
-                    boolean state = txtNumbStartSubtitle[curCbSubtitle].isEnabled();
+            chbDefaultSubtitle[nSubtitle].addActionListener(e -> {
+                int curCbSubtitle = cbSubtitle.getSelectedIndex();
+                boolean state = rbNoDefSubtitle[curCbSubtitle].isEnabled();
 
+                rbNoDefSubtitle[curCbSubtitle].setEnabled(!state);
+                rbYesDefSubtitle[curCbSubtitle].setEnabled(!state);
+            });
+
+            chbForcedSubtitle[nSubtitle].addActionListener(e -> {
+                int curCbSubtitle = cbSubtitle.getSelectedIndex();
+                boolean state = rbNoForcedSubtitle[curCbSubtitle].isEnabled();
+
+                rbNoForcedSubtitle[curCbSubtitle].setEnabled(!state);
+                rbYesForcedSubtitle[curCbSubtitle].setEnabled(!state);
+            });
+
+            chbNameSubtitle[nSubtitle].addActionListener(e -> {
+                int curCbSubtitle = cbSubtitle.getSelectedIndex();
+                boolean state = chbNumbSubtitle[curCbSubtitle].isEnabled();
+
+                chbNumbSubtitle[curCbSubtitle].setEnabled(!state);
+                txtNameSubtitle[curCbSubtitle].setEnabled(!state);
+
+                if (chbNumbSubtitle[curCbSubtitle].isSelected()) {
                     lblNumbStartSubtitle[curCbSubtitle].setEnabled(!state);
                     txtNumbStartSubtitle[curCbSubtitle].setEnabled(!state);
                     lblNumbPadSubtitle[curCbSubtitle].setEnabled(!state);
                     txtNumbPadSubtitle[curCbSubtitle].setEnabled(!state);
                     lblNumbExplainSubtitle[curCbSubtitle].setEnabled(!state);
                 }
+            });
+
+            chbNumbSubtitle[nSubtitle].addActionListener(e -> {
+                int curCbSubtitle = cbSubtitle.getSelectedIndex();
+                boolean state = txtNumbStartSubtitle[curCbSubtitle].isEnabled();
+
+                lblNumbStartSubtitle[curCbSubtitle].setEnabled(!state);
+                txtNumbStartSubtitle[curCbSubtitle].setEnabled(!state);
+                lblNumbPadSubtitle[curCbSubtitle].setEnabled(!state);
+                txtNumbPadSubtitle[curCbSubtitle].setEnabled(!state);
+                lblNumbExplainSubtitle[curCbSubtitle].setEnabled(!state);
             });
 
             txtNumbStartSubtitle[nSubtitle].addFocusListener(new FocusAdapter() {
@@ -3828,25 +3620,21 @@ public class JMkvpropedit {
                 }
             });
 
-            chbLangSubtitle[nSubtitle].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbSubtitle = cbSubtitle.getSelectedIndex();
-                    boolean state = cbLangSubtitle[curCbSubtitle].isEnabled();
+            chbLangSubtitle[nSubtitle].addActionListener(e -> {
+                int curCbSubtitle = cbSubtitle.getSelectedIndex();
+                boolean state = cbLangSubtitle[curCbSubtitle].isEnabled();
 
-                    cbLangSubtitle[curCbSubtitle].setEnabled(!state);
-                }
+                cbLangSubtitle[curCbSubtitle].setEnabled(!state);
             });
 
-            chbExtraCmdSubtitle[nSubtitle].addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int curCbSubtitle = cbSubtitle.getSelectedIndex();
-                    boolean state = txtExtraCmdSubtitle[curCbSubtitle].isEnabled();
+            chbExtraCmdSubtitle[nSubtitle].addActionListener(e -> {
+                int curCbSubtitle = cbSubtitle.getSelectedIndex();
+                boolean state = txtExtraCmdSubtitle[curCbSubtitle].isEnabled();
 
-                    txtExtraCmdSubtitle[curCbSubtitle].setEnabled(!state);
-                }
+                txtExtraCmdSubtitle[curCbSubtitle].setEnabled(!state);
             });
 
-            cbSubtitle.addItem("Subtitle Track " + (nSubtitle+1));
+            cbSubtitle.addItem("Subtitle Track " + (nSubtitle + 1));
         }
 
         nSubtitle++;
@@ -3887,8 +3675,8 @@ public class JMkvpropedit {
                         }
                         break;
                     case 2:
-                        String tmpTags = Utils.getPathWithoutExt((String) modelFiles.get(i)) +
-                                         txtTags.getText() + cbExtTags.getSelectedItem();
+                        String tmpTags = Utils.getPathWithoutExt(modelFiles.get(i)) +
+                                txtTags.getText() + cbExtTags.getSelectedItem();
 
                         if (Utils.isWindows()) {
                             cmdLineGeneral[i] += " --tags all:\"" + tmpTags + "\"";
@@ -3922,8 +3710,8 @@ public class JMkvpropedit {
                         }
                         break;
                     case 2:
-                        String tmpChaps = Utils.getPathWithoutExt((String) modelFiles.get(i)) +
-                                          txtChapters.getText() + cbExtChapters.getSelectedItem();
+                        String tmpChaps = Utils.getPathWithoutExt(modelFiles.get(i)) +
+                                txtChapters.getText() + cbExtChapters.getSelectedItem();
 
                         if (Utils.isWindows()) {
                             cmdLineGeneral[i] += " --chapters \"" + tmpChaps + "\"";
@@ -3951,7 +3739,7 @@ public class JMkvpropedit {
                     start++;
                 }
 
-                newTitle = newTitle.replace("{file_name}", Utils.getFileNameWithoutExt((String) modelFiles.get(i)));
+                newTitle = newTitle.replace("{file_name}", Utils.getFileNameWithoutExt(modelFiles.get(i)));
 
                 cmdLineGeneral[i] += " --set title=\"" + Utils.escapeQuotes(newTitle) + "\"";
                 cmdLineGeneralOpt[i] += " --set title=\"" + Utils.escapeName(newTitle) + "\"";
@@ -3987,8 +3775,8 @@ public class JMkvpropedit {
                     tmpCmdLineVideoOpt[j] = "";
 
                     if (chbEditVideo[j].isSelected()) {
-                        tmpCmdLineVideo[j] += " --edit track:v" + (j+1);
-                        tmpCmdLineVideoOpt[j] += " --edit track:v" + (j+1);
+                        tmpCmdLineVideo[j] += " --edit track:v" + (j + 1);
+                        tmpCmdLineVideoOpt[j] += " --edit track:v" + (j + 1);
                     }
 
                     if (chbDefaultVideo[j].isSelected()) {
@@ -4051,8 +3839,8 @@ public class JMkvpropedit {
             }
         }
 
-        for (int i = 0; i < nVideo; i++) {
-            for (int j = 0; j < modelFiles.size(); j++) {
+        for (int j = 0; j < modelFiles.size(); j++) {
+            for (int i = 0; i < nVideo; i++) {
                 String tmpText = tmpCmdLineVideo[i];
                 String tmpText2 = tmpCmdLineVideoOpt[i];
 
@@ -4062,8 +3850,8 @@ public class JMkvpropedit {
                     numStartVideo[i]++;
                 }
 
-                tmpText = tmpText.replace("{file_name}", Utils.getFileNameWithoutExt((String) modelFiles.get(i)));
-                tmpText2 = tmpText2.replace("{file_name}", Utils.getFileNameWithoutExt((String) modelFiles.get(i)));
+                tmpText = tmpText.replace("{file_name}", Utils.getFileNameWithoutExt(modelFiles.get(j)));
+                tmpText2 = tmpText2.replace("{file_name}", Utils.getFileNameWithoutExt(modelFiles.get(j)));
 
                 cmdLineVideo[j] += tmpText;
                 cmdLineVideoOpt[j] += tmpText2;
@@ -4093,8 +3881,8 @@ public class JMkvpropedit {
                     tmpCmdLineAudioOpt[j] = "";
 
                     if (chbEditAudio[j].isSelected()) {
-                        tmpCmdLineAudio[j] += " --edit track:a" + (j+1);
-                        tmpCmdLineAudioOpt[j] += " --edit track:a" + (j+1);
+                        tmpCmdLineAudio[j] += " --edit track:a" + (j + 1);
+                        tmpCmdLineAudioOpt[j] += " --edit track:a" + (j + 1);
                     }
 
                     if (chbDefaultAudio[j].isSelected()) {
@@ -4157,8 +3945,11 @@ public class JMkvpropedit {
             }
         }
 
-        for (int i = 0; i < nAudio; i++) {
-            for (int j = 0; j < modelFiles.size(); j++) {
+        System.out.println(nAudio);
+        System.out.println(modelFiles.size());
+        for (int j = 0; j < modelFiles.size(); j++) {
+            for (int i = 0; i < nAudio; i++) {
+
                 String tmpText = tmpCmdLineAudio[i];
                 String tmpText2 = tmpCmdLineAudioOpt[i];
 
@@ -4167,10 +3958,8 @@ public class JMkvpropedit {
                     tmpText2 = tmpText.replace("{num}", Utils.padNumber(numPadAudio[i], numStartAudio[i]));
                     numStartAudio[i]++;
                 }
-
-                tmpText = tmpText.replace("{file_name}", Utils.getFileNameWithoutExt((String) modelFiles.get(i)));
-                tmpText2 = tmpText2.replace("{file_name}", Utils.getFileNameWithoutExt((String) modelFiles.get(i)));
-
+                tmpText = tmpText.replace("{file_name}", Utils.getFileNameWithoutExt(modelFiles.get(j)));
+                tmpText2 = tmpText2.replace("{file_name}", Utils.getFileNameWithoutExt(modelFiles.get(j)));
                 cmdLineAudio[j] += tmpText;
                 cmdLineAudioOpt[j] += tmpText2;
             }
@@ -4199,8 +3988,8 @@ public class JMkvpropedit {
                     tmpCmdLineSubtitleOpt[j] = "";
 
                     if (chbEditSubtitle[j].isSelected()) {
-                        tmpCmdLineSubtitle[j] += " --edit track:s" + (j+1);
-                        tmpCmdLineSubtitleOpt[j] += " --edit track:s" + (j+1);
+                        tmpCmdLineSubtitle[j] += " --edit track:s" + (j + 1);
+                        tmpCmdLineSubtitleOpt[j] += " --edit track:s" + (j + 1);
                     }
 
                     if (chbDefaultSubtitle[j].isSelected()) {
@@ -4263,8 +4052,8 @@ public class JMkvpropedit {
             }
         }
 
-        for (int i = 0; i < nSubtitle; i++) {
-            for (int j = 0; j < modelFiles.size(); j++) {
+        for (int j = 0; j < modelFiles.size(); j++) {
+            for (int i = 0; i < nSubtitle; i++) {
                 String tmpText = tmpCmdLineSubtitle[i];
                 String tmpText2 = tmpCmdLineSubtitleOpt[i];
 
@@ -4274,8 +4063,8 @@ public class JMkvpropedit {
                     numStartSubtitle[i]++;
                 }
 
-                tmpText = tmpText.replace("{file_name}", Utils.getFileNameWithoutExt((String) modelFiles.get(i)));
-                tmpText2 = tmpText2.replace("{file_name}", Utils.getFileNameWithoutExt((String) modelFiles.get(i)));
+                tmpText = tmpText.replace("{file_name}", Utils.getFileNameWithoutExt(modelFiles.get(j)));
+                tmpText2 = tmpText2.replace("{file_name}", Utils.getFileNameWithoutExt(modelFiles.get(j)));
 
                 cmdLineSubtitle[j] += tmpText;
                 cmdLineSubtitleOpt[j] += tmpText2;
@@ -4292,7 +4081,6 @@ public class JMkvpropedit {
             String name = modelAttachmentsAdd.getValueAt(i, 1).toString();
             String desc = modelAttachmentsAdd.getValueAt(i, 2).toString();
             String mime = modelAttachmentsAdd.getValueAt(i, 3).toString();
-
 
             if (!name.isEmpty() || !desc.isEmpty() || !mime.isEmpty()) {
                 if (!name.isEmpty()) {
@@ -4316,7 +4104,6 @@ public class JMkvpropedit {
         }
     }
 
-
     private void setCmdLineAttachmentsReplace() {
         cmdLineAttachmentsReplace = "";
         cmdLineAttachmentsReplaceOpt = "";
@@ -4328,7 +4115,6 @@ public class JMkvpropedit {
             String name = modelAttachmentsReplace.getValueAt(i, 3).toString();
             String desc = modelAttachmentsReplace.getValueAt(i, 4).toString();
             String mime = modelAttachmentsReplace.getValueAt(i, 5).toString();
-
 
             if (!name.isEmpty() || !desc.isEmpty() || !mime.isEmpty()) {
                 if (!name.isEmpty()) {
@@ -4354,7 +4140,7 @@ public class JMkvpropedit {
                 cmdLineAttachmentsReplaceOpt += " --replace-attachment \"name:" + Utils.escapeName(orig)
                         + ":" + Utils.escapeName(replace) + "\"";
             } else if (type.equals(rbAttachReplaceID.getText())) {
-                cmdLineAttachmentsReplace += " --replace-attachment \"" + orig    + ":" + replace + "\"";
+                cmdLineAttachmentsReplace += " --replace-attachment \"" + orig + ":" + replace + "\"";
                 cmdLineAttachmentsReplaceOpt += " --replace-attachment \"" + orig + ":" + Utils.escapeName(replace) + "\"";
             } else {
                 cmdLineAttachmentsReplace += " --replace-attachment \"mime-type:" + Utils.escapeColons(orig)
@@ -4395,8 +4181,8 @@ public class JMkvpropedit {
         setCmdLineAttachmentsReplace();
         setCmdLineAttachmentsDelete();
 
-        cmdLineBatch = new ArrayList<String>();
-        cmdLineBatchOpt = new ArrayList<String>();
+        cmdLineBatch = new ArrayList<>();
+        cmdLineBatchOpt = new ArrayList<>();
 
         String cmdTemp = cmdLineGeneral[0] + cmdLineAttachmentsDelete + cmdLineAttachmentsAdd
                 + cmdLineAttachmentsReplace + cmdLineVideo[0] + cmdLineAudio[0] + cmdLineSubtitle[0];
@@ -4404,19 +4190,19 @@ public class JMkvpropedit {
         if (!cmdTemp.isEmpty()) {
             for (int i = 0; i < modelFiles.getSize(); i++) {
                 String cmdLineAll = cmdLineGeneral[i] + cmdLineAttachmentsDelete + cmdLineAttachmentsAdd
-                        + cmdLineAttachmentsReplace    + cmdLineVideo[i] + cmdLineAudio[i] + cmdLineSubtitle[i];
+                        + cmdLineAttachmentsReplace + cmdLineVideo[i] + cmdLineAudio[i] + cmdLineSubtitle[i];
 
                 String cmdLineAllOpt = cmdLineGeneralOpt[i] + cmdLineAttachmentsDeleteOpt + cmdLineAttachmentsAddOpt
                         + cmdLineAttachmentsReplaceOpt + cmdLineVideoOpt[i] + cmdLineAudioOpt[i] + cmdLineSubtitleOpt[i];
 
                 if (Utils.isWindows()) {
                     cmdLineBatch.add("\"" + txtMkvPropExe.getText() + "\" \"" + modelFiles.get(i) + "\"" + cmdLineAll);
-                    cmdLineBatchOpt.add("\"" + Utils.escapeName((String) modelFiles.get(i)) + "\"" + cmdLineAllOpt);
+                    cmdLineBatchOpt.add("\"" + Utils.escapeName(modelFiles.get(i)) + "\"" + cmdLineAllOpt);
                 } else {
                     cmdLineBatch.add("\"" + Utils.escapeQuotes(txtMkvPropExe.getText()) + "\" "
-                                     + "\"" + Utils.escapeQuotes((String) modelFiles.get(i)) + "\"" + cmdLineAll);
+                            + "\"" + Utils.escapeQuotes(modelFiles.get(i)) + "\"" + cmdLineAll);
 
-                    cmdLineBatchOpt.add("\"" + Utils.escapeName((String) modelFiles.get(i)) + "\"" + cmdLineAllOpt);
+                    cmdLineBatchOpt.add("\"" + Utils.escapeName(modelFiles.get(i)) + "\"" + cmdLineAllOpt);
                 }
             }
         }
@@ -4427,7 +4213,7 @@ public class JMkvpropedit {
             @Override
             public Void doInBackground() {
                 txtOutput.setText("");
-                pnlTabs.setSelectedIndex(pnlTabs.getTabCount()-1);
+                pnlTabs.setSelectedIndex(pnlTabs.getTabCount() - 1);
                 pnlTabs.setEnabled(false);
                 btnProcessFiles.setEnabled(false);
                 btnGenerateCmdLine.setEnabled(false);
@@ -4442,7 +4228,7 @@ public class JMkvpropedit {
                             optFile.createNewFile();
                         }
 
-                        for (String content:optFileContents) {
+                        for (String content : optFileContents) {
                             optFilePW.println(content);
                         }
 
@@ -4464,12 +4250,12 @@ public class JMkvpropedit {
 
                         optFile.delete();
 
-                        if (i < cmdLineBatch.size()-1) {
+                        if (i < cmdLineBatch.size() - 1) {
                             txtOutput.append("--------------\n\n");
                         }
 
                         Thread.sleep(10);
-                    } catch (IOException e) {
+                    } catch (IOException ignored) {
                     } catch (InterruptedException e) {
                         break;
                     }
@@ -4484,9 +4270,9 @@ public class JMkvpropedit {
                 btnProcessFiles.setEnabled(true);
                 btnGenerateCmdLine.setEnabled(true);
             }
-         };
+        };
 
-         worker.execute();
+        worker.execute();
     }
 
     private void parseFiles(String[] argsArray) {
@@ -4506,7 +4292,7 @@ public class JMkvpropedit {
                     } else {
                         addFile(file, true);
                     }
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
             }
         }
@@ -4526,9 +4312,7 @@ public class JMkvpropedit {
                     in.close();
 
                     exeFound = true;
-                } catch (IOException e) {
-                    exeFound = false;
-                } catch (InterruptedException e) {
+                } catch (IOException | InterruptedException e) {
                     exeFound = false;
                 }
 
@@ -4537,13 +4321,13 @@ public class JMkvpropedit {
         };
 
         worker.execute();
-        while (!worker.isDone()) { }
+        while (!worker.isDone()) {
+        }
 
         return exeFound;
     }
 
     /* End of command line methods */
-
 
     /* Start of INI configuration file methods */
 
@@ -4565,10 +4349,7 @@ public class JMkvpropedit {
                         chbMkvPropExeDef.setEnabled(true);
                     }
                 }
-            } catch (InvalidFileFormatException e) {
-
-            } catch (IOException e) {
-
+            } catch (IOException ignored) {
             }
         } else if (Utils.isWindows()) {
             String exePath = getMkvPropExeFromReg();
@@ -4590,17 +4371,13 @@ public class JMkvpropedit {
         chbMkvPropExeDef.setEnabled(true);
 
         try {
-            if (!iniFile.exists()) {
+            if (!iniFile.exists())
                 iniFile.createNewFile();
-            }
 
             ini = new Ini(iniFile);
             ini.put("General", "mkvpropedit", exeFile.toString());
             ini.store();
-        }
-        catch (InvalidFileFormatException e1) {
-        }
-        catch (IOException e1) {
+        } catch (IOException ignored) {
         }
     }
 
@@ -4617,10 +4394,7 @@ public class JMkvpropedit {
             ini.put("General", "mkvpropedit", "mkvpropedit");
 
             ini.store();
-        }
-        catch (InvalidFileFormatException e1) {
-        }
-        catch (IOException e1) {
+        } catch (IOException ignored) {
         }
     }
 
@@ -4637,14 +4411,12 @@ public class JMkvpropedit {
                         "Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\MKVtoolnix",
                         "UninstallString");
             }
-        } catch (IllegalArgumentException e) {
-        } catch (IllegalAccessException e) {
-        } catch (InvocationTargetException e) {
+        } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException ignored) {
         }
 
         if (exePath != null) {
             File tmpExe = new File(exePath);
-            tmpExe = new File(tmpExe.getParent()+"\\mkvpropedit.exe");
+            tmpExe = new File(tmpExe.getParent() + "\\mkvpropedit.exe");
 
             if (tmpExe.exists()) {
                 exePath = tmpExe.toString();
@@ -4673,7 +4445,7 @@ public class JMkvpropedit {
             total += colWidths[i];
         }
 
-        colWidths[colWidths.length-1] += parWidth-total;
+        colWidths[colWidths.length - 1] += parWidth - total;
 
         for (int i = 0; i < colSizes.length; i++) {
             // Set minimum size for column
@@ -4685,12 +4457,9 @@ public class JMkvpropedit {
 
         table.revalidate();
     }
-
     /* End of table methods */
 
-
     /* Start of file methods */
-
     private void addFile(File file, boolean checkExtension) {
         try {
             if (!modelFiles.contains(file.getCanonicalPath()) && !checkExtension) {
@@ -4699,20 +4468,17 @@ public class JMkvpropedit {
                     MATROSKA_EXT_FILTER.accept(file)) {
                 modelFiles.add(modelFiles.getSize(), file.getCanonicalPath());
             }
-        } catch (IOException e) {
+        } catch (IOException ignored) {
         }
     }
 
     private void addMkvFilesFromFolder(final File folder) {
-        Runnable tmpWorker = new Runnable() {
-            @Override
-            public void run() {
-                Iterator<File> mkvFiles = FileUtils.iterateFiles(folder,
-                        MATROSKA_FILE_FILTER, TrueFileFilter.INSTANCE);
+        Runnable tmpWorker = () -> {
+            Iterator<File> mkvFiles = FileUtils.iterateFiles(folder,
+                    MATROSKA_FILE_FILTER, TrueFileFilter.INSTANCE);
 
-                while (mkvFiles.hasNext()) {
-                    addFile(mkvFiles.next(), false);
-                }
+            while (mkvFiles.hasNext()) {
+                addFile(mkvFiles.next(), false);
             }
         };
 
